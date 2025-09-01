@@ -8,18 +8,16 @@ export default function UsersPage() {
   const [error, setError] = useState("");
 
   async function loadUsers() {
-    setError("");
-    try {
-      const res = await fetch(`${API}/api/users`);
-      const text = await res.text();             // read as text first
-      const data = text ? JSON.parse(text) : []; // try parse
-      if (!res.ok) throw new Error(data?.error || `GET /api/users ${res.status}`);
-      setUsers(Array.isArray(data) ? data : []); // ensure array
-    } catch (e) {
-      setError(e.message || "Failed to load users");
-      setUsers([]); // avoid .map crash
-    }
+  const res = await fetch(`${API}/api/users`);
+  const ct = res.headers.get("content-type") || "";
+  const body = await res.text();
+  const data = ct.includes("application/json") ? JSON.parse(body) : null;
+  if (!res.ok) {
+    throw new Error(data?.error || `GET /api/users ${res.status} ${body.slice(0,120)}`);
   }
+  setUsers(Array.isArray(data) ? data : []);
+}
+
 
   async function addUser(e) {
   e.preventDefault();
