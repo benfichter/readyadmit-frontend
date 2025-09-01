@@ -2,7 +2,12 @@
 import { useEffect, useState } from "react";
 
 export default function UsersPage() {
-  const API = (import.meta.env.VITE_API_ORIGIN || "").trim();
+  // client/src/pages/UsersPage.jsx
+const RAW = (import.meta.env.VITE_API_ORIGIN || "").trim();
+const API = RAW
+  ? (/^https?:\/\//i.test(RAW) ? RAW : `https://${RAW}`).replace(/\/+$/,'') // add https:// if missing, strip trailing slash
+  : ""; // empty => use Vite proxy in dev
+
   const [users, setUsers] = useState([]);
   const [form, setForm] = useState({ name: "", email: "" });
   const [error, setError] = useState("");
