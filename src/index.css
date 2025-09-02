@@ -5,3 +5,16 @@
 
 html, body, #root { height: 100%; }
 body { @apply bg-gray-50 text-gray-900; }
+
+
+/***** Smooth cards *****/
+.card { @apply bg-white border rounded-2xl; }
+
+/* --- School tabs: subtle focus ring & transitions --- */
+button[aria-pressed="true"] { transition: background-color 120ms ease, color 120ms ease; }
+button[aria-pressed="false"] { transition: background-color 120ms ease, color 120ms ease; }
+
+/* Prefer-reduced-motion: disable swoop-in on hero word */
+@media (prefers-reduced-motion: reduce) {
+  .swoop-in { animation: none !important; }
+}
