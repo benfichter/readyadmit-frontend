@@ -1,35 +1,42 @@
-import { NavLink, useLocation } from 'react-router-dom'
+import { NavLink, useLocation } from 'react-router-dom';
+import {
+  LayoutDashboard, FileText, BookOpen, Trophy, CalendarDays, Settings
+} from 'lucide-react';
 
+const items = [
+  { to: '/dashboard', label: 'Overview', icon: LayoutDashboard },
+  { to: '/essays', label: 'Essays', icon: FileText },
+  { to: '/applications', label: 'Applications', icon: BookOpen },
+  { to: '/extracurriculars', label: 'Extracurriculars', icon: Trophy },
+  { to: '/deadlines', label: 'Deadlines', icon: CalendarDays },
+  { to: '/settings', label: 'Settings', icon: Settings },
+];
 
-const item = ({ isActive }) => `flex items-center justify-between px-3 py-2 rounded-xl text-sm ${isActive ? 'bg-blue-50 text-blue-700' : 'hover:bg-gray-100 text-gray-700'}`
+export default function SideNav() {
+  const loc = useLocation();
 
-
-export default function SideNav(){
-const loc = useLocation()
-const active = {
-'/': 'Overview', '/essays': 'Essays', '/extracurriculars': 'Extracurriculars', '/applications': 'Applications'
-}[loc.pathname]
-
-
-const nav = [
-{ to: '/', label: 'Overview' },
-{ to: '/essays', label: 'Essays' },
-{ to: '/extracurriculars', label: 'Extracurriculars' },
-{ to: '/applications', label: 'Applications' },
-{ to: '/upgrade', label: 'Upgrade', divider: true },
-]
-
-
-return (
-<aside className="w-60 shrink-0">
-<div className="bg-white rounded-2xl border p-2 sticky top-16">
-{nav.map(n => (
-<NavLink key={n.to} to={n.to} end className={item}>
-<span>{n.label}</span>
-{active === n.label && <span className="text-[10px] px-2 py-0.5 rounded-full bg-blue-600 text-white">Active</span>}
-</NavLink>
-))}
-</div>
-</aside>
-)
+  return (
+    <aside className="sidenav">
+      <div className="sidenav-scroller">
+        <div className="sidenav-section">
+          <div className="sidenav-title">ReadyAdmit</div>
+          <nav className="sidenav-list">
+            {items.map(({ to, label, icon: Icon }) => (
+              <NavLink
+                key={to}
+                to={to}
+                className={({ isActive }) =>
+                  `sidenav-link ${isActive || loc.pathname.startsWith(to) ? 'active' : ''}`
+                }
+                end={to === '/dashboard'}
+              >
+                <Icon size={18} className="sidenav-icon" />
+                <span>{label}</span>
+              </NavLink>
+            ))}
+          </nav>
+        </div>
+      </div>
+    </aside>
+  );
 }

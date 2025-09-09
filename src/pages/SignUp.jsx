@@ -1,29 +1,28 @@
-import { useEffect, useState } from 'react';
+import { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { api } from '../lib/api';
 import { useAuth } from '../context/AuthContext';
 import AppShell from '../components/AppShell';
 
-export default function SignIn() {
+export default function SignUp() {
   const nav = useNavigate();
   const { setUser } = useAuth();
 
+  const [name, setName] = useState('');
   const [email, setEmail] = useState('');
-  const [remember, setRemember] = useState(true);
+  const [agree, setAgree] = useState(false);
   const [busy, setBusy] = useState(false);
   const [err, setErr] = useState('');
-  const [fieldErr, setFieldErr] = useState({ email: '' });
-
-  useEffect(() => {
-    const saved = localStorage.getItem('rememberEmail');
-    if (saved) { setEmail(saved); setRemember(true); }
-  }, []);
+  const [fieldErr, setFieldErr] = useState({ name: '', email: '', agree: '' });
 
   function validate() {
-    const ok = /\S+@\S+\.\S+/.test(email.trim());
-    const fe = { email: ok ? '' : 'Enter a valid email address.' };
+    const fe = {
+      name: name.trim().length >= 2 ? '' : 'Enter your full name.',
+      email: /\S+@\S+\.\S+/.test(email.trim()) ? '' : 'Enter a valid email address.',
+      agree: agree ? '' : 'Please agree to the terms.',
+    };
     setFieldErr(fe);
-    return ok;
+    return !fe.name && !fe.email && !fe.agree;
   }
 
   async function submit(e) {
@@ -32,15 +31,14 @@ export default function SignIn() {
     if (!validate()) return;
     try {
       setBusy(true);
-      const { data } = await api.post('/auth/login', { email: email.trim() });
+      // your /auth/login creates the user if not found
+      const { data } = await api.post('/auth/login', { email: email.trim(), name: name.trim() });
       localStorage.setItem('token', data.token);
-      remember ? localStorage.setItem('rememberEmail', email.trim())
-               : localStorage.removeItem('rememberEmail');
       const me = await api.get('/auth/me');
       setUser(me.data);
       nav('/dashboard');
     } catch (e) {
-      setErr(e?.response?.data?.error || 'Sign-in failed');
+      setErr(e?.response?.data?.error || 'Sign-up failed');
     } finally {
       setBusy(false);
     }
@@ -57,9 +55,9 @@ export default function SignIn() {
       <main className="auth-wrap">
         <section className="auth-panel card card-soft">
           <div>
-            <div className="badge mb-3">Welcome back</div>
-            <h1 className="text-2xl font-bold tracking-tight">Sign in</h1>
-            <p className="text-sm text-[#b8bfd4] mt-1">Use your email or Google.</p>
+            <div className="badge mb-3">Create your account</div>
+            <h1 className="text-2xl font-bold tracking-tight">Sign up</h1>
+            <p className="text-sm text-[#b8bfd4] mt-1">Start free—email or Google.</p>
           </div>
 
           {err && (
@@ -69,6 +67,25 @@ export default function SignIn() {
           )}
 
           <form onSubmit={submit} className="mt-5 space-y-4" noValidate>
+            <div>
+              <label htmlFor="name" className="form-label">Full name</label>
+              <div className="input-group">
+                <span className="input-icon" aria-hidden="true">
+                  <svg width="18" height="18" viewBox="0 0 24 24"><path fill="currentColor" d="M12 12a5 5 0 1 0-5-5 5 5 0 0 0 5 5Zm0 2c-4.42 0-8 2-8 4.5V21h16v-2.5c0-2.5-3.58-4.5-8-4.5Z"/></svg>
+                </span>
+                <input
+                  id="name"
+                  className={`input input-with-icon ${fieldErr.name ? 'input-invalid' : ''}`}
+                  value={name}
+                  onChange={(e)=>setName(e.target.value)}
+                  placeholder="Taylor Jenkins"
+                  aria-invalid={!!fieldErr.name}
+                  aria-describedby={fieldErr.name ? 'name-err' : undefined}
+                />
+              </div>
+              {fieldErr.name && <p id="name-err" className="form-error">{fieldErr.name}</p>}
+            </div>
+
             <div>
               <label htmlFor="email" className="form-label">Email</label>
               <div className="input-group">
@@ -89,15 +106,22 @@ export default function SignIn() {
               {fieldErr.email && <p id="email-err" className="form-error">{fieldErr.email}</p>}
             </div>
 
-            <div className="flex items-center justify-between">
-              <label className="flex items-center gap-2 text-sm text-[#c6cce0]">
-                <input type="checkbox" className="accent-[#7c3aed]" checked={remember} onChange={(e)=>setRemember(e.target.checked)} />
-                Remember me
+            <div className="flex items-start gap-3">
+              <input
+                id="agree" type="checkbox" className="mt-1 accent-[#7c3aed]"
+                checked={agree} onChange={(e)=>setAgree(e.target.checked)}
+                aria-invalid={!!fieldErr.agree}
+              />
+              <label htmlFor="agree" className="text-sm text-[#c6cce0]">
+                I agree to the <a className="form-link" href="/terms" target="_blank" rel="noreferrer">Terms</a> and{' '}
+                <a className="form-link" href="/privacy" target="_blank" rel="noreferrer">Privacy Policy</a>.
+                {fieldErr.agree && <span className="block form-error mt-1">{fieldErr.agree}</span>}
               </label>
-              <button type="submit" className="btn btn-primary min-w-[120px]" disabled={busy}>
-                {busy ? <span className="inline-flex items-center gap-2"><span className="spinner" /> Signing in…</span> : 'Continue'}
-              </button>
             </div>
+
+            <button type="submit" className="btn btn-primary w-full" disabled={busy}>
+              {busy ? <span className="inline-flex items-center gap-2"><span className="spinner" /> Creating…</span> : 'Create account'}
+            </button>
           </form>
 
           <div className="divider my-6" role="separator" aria-label="or continue with" />
@@ -110,7 +134,7 @@ export default function SignIn() {
           </button>
 
           <p className="auth-foot text-xs text-[#9aa3be] mt-6">
-            Don’t have an account? <Link to="/signup" className="form-link">Create one</Link>
+            Already have an account? <Link to="/signin" className="form-link">Sign in</Link>
           </p>
         </section>
       </main>

@@ -1,39 +1,43 @@
+// src/pages/EssaysPage.jsx
+import AppShell from '../components/AppShell';
 import { useEffect, useMemo, useState } from 'react';
 import { api } from '../lib/api';
 
 const PROMPTS = [
-  { value: 'Common App', text: 'Common App Personal Essay: Share an essay on any topic of your choice...' },
-  { value: 'UC PIQ #1', text: 'Describe an example of your leadership experience...' },
+  { value: 'Common App', text: 'Common App Personal Essay: Share an essay on any topic of your choice…' },
+  { value: 'UC PIQ #1',  text: 'Describe an example of your leadership experience…' },
 ];
 
-const splitSentences = (txt='') =>
-  String(txt).replace(/\s+/g,' ').trim()
+const split = (txt = '') =>
+  String(txt)
+    .replace(/\s+/g, ' ')
+    .trim()
     .split(/(?<=[.!?])\s+(?=[A-Z0-9“"(\[])/)
     .filter(Boolean);
 
-export default function EssaysPage(){
+export default function EssaysPage() {
   const [prompt, setPrompt] = useState(PROMPTS[0].value);
   const [text, setText] = useState('');
   const [score, setScore] = useState(0);
   const [saving, setSaving] = useState(false);
-  const [likes, setLikes] = useState([]);      // [{ index, text, why }]
-  const [needs, setNeeds] = useState([]);      // [{ index, text, why }]
+  const [likes, setLikes] = useState([]);     // [{index, why}]
+  const [needs, setNeeds] = useState([]);     // [{index, why}]
   const [err, setErr] = useState('');
 
-  // Load draft
+  // load draft
   useEffect(() => {
     (async () => {
       try {
         const { data } = await api.get('/essays/draft');
         setText(data?.text || '');
-        setScore(data?.score || 0);
+        setScore(data?.score ?? 0);
       } catch (e) {
         setErr(e?.response?.data?.error || 'Failed to load draft');
       }
     })();
   }, []);
 
-  // Autosave
+  // autosave (debounced)
   useEffect(() => {
     const t = setTimeout(async () => {
       try {
@@ -46,9 +50,10 @@ export default function EssaysPage(){
     return () => clearTimeout(t);
   }, [text]);
 
-  const sentences = useMemo(() => splitSentences(text), [text]);
+  const sentences = useMemo(() => split(text), [text]);
+  const words = useMemo(() => text.trim().split(/\s+/).filter(Boolean).length, [text]);
 
-  async function runAI(){
+  async function runAI() {
     setErr('');
     try {
       const { data } = await api.post('/essays/grade', { text, prompt });
@@ -60,88 +65,175 @@ export default function EssaysPage(){
     }
   }
 
-  const sentenceClass = (i) =>
-    likes.find(x=>x.index===i) ? 'bg-green-100' :
-    needs.find(x=>x.index===i) ? 'bg-yellow-100' : '';
+  // sentence highlight color
+  const toneFor = (i) =>
+    likes.find((x) => x.index === i)
+      ? 'bg-emerald-500/10 border-emerald-400/30 text-emerald-100'
+      : needs.find((x) => x.index === i)
+      ? 'bg-amber-500/10 border-amber-400/30 text-amber-100'
+      : 'bg-white/5 border-white/10 text-white/85';
+
+  const promptText = PROMPTS.find((p) => p.value === prompt)?.text;
 
   return (
-    <div className="grid lg:grid-cols-[1fr_320px] gap-4">
-      <div className="space-y-3">
-        <div className="flex items-center gap-3">
-          <label className="text-sm">Prompt:</label>
-          <select
-            value={prompt}
-            onChange={e=>setPrompt(e.target.value)}
-            className="border rounded-xl px-3 py-1.5 text-sm"
-          >
-            {PROMPTS.map(p => <option key={p.value} value={p.value}>{p.value}</option>)}
-          </select>
-          <div className="text-sm text-green-600">{saving ? 'Saving…' : 'Saved'}</div>
-          <button onClick={runAI} className="ml-auto px-4 py-1.5 rounded-xl bg-blue-600 text-white">
-            ✦ Score (AI)
-          </button>
-        </div>
+    <AppShell>
+      <div className="container">
+        <div className="grid gap-6 lg:grid-cols-[1.2fr_.8fr]">
+          {/* LEFT: editor & panels */}
+          <section className="space-y-4">
+            {/* Toolbar */}
+            <div className="card p-4 flex flex-wrap items-center gap-3">
+              <div className="text-sm text-[#cbd3ea]">Prompt</div>
+              <select
+                value={prompt}
+                onChange={(e) => setPrompt(e.target.value)}
+                className="select"
+              >
+                {PROMPTS.map((p) => (
+                  <option key={p.value} value={p.value}>
+                    {p.value}
+                  </option>
+                ))}
+              </select>
+              <div className="ml-auto flex items-center gap-3">
+                <span className="text-xs text-[#9fb0d8]">
+                  {saving ? 'Saving…' : 'Saved'}
+                </span>
+                <button
+                  onClick={runAI}
+                  className="btn btn-primary"
+                  disabled={!text.trim()}
+                  title={!text.trim() ? 'Paste your draft first' : 'Score with AI'}
+                >
+                  ✦ Score (AI)
+                </button>
+              </div>
+            </div>
 
-        <div className="bg-white rounded-2xl border p-3 text-sm text-gray-700 min-h-[64px]">
-          {PROMPTS.find(p=>p.value===prompt)?.text}
-        </div>
+            {/* Prompt blurb */}
+            {promptText && (
+              <div className="card p-4 text-sm text-[#c6cce0]">{promptText}</div>
+            )}
 
-        {err && <div className="text-sm text-red-600">{err}</div>}
+            {/* Error */}
+            {err && (
+              <div className="card p-4 text-sm text-rose-300 border border-rose-500/40 bg-rose-500/10">
+                {err}
+              </div>
+            )}
 
-        <textarea
-          value={text}
-          onChange={e=>setText(e.target.value)}
-          className="w-full h-80 border rounded-2xl p-3 bg-white"
-          placeholder="Write your essay here. We’ll highlight strong sentences (green) and areas to improve (yellow)."
-        />
+            {/* Editor */}
+            <div className="card p-4">
+              <textarea
+                className="input h-96"
+                value={text}
+                onChange={(e) => setText(e.target.value)}
+                placeholder="Write your essay here. We’ll highlight strong sentences (green) and areas to improve (yellow)."
+              />
+              <div className="mt-2 text-xs text-[#9fb0d8]">
+                {sentences.length} sentences • {words} words
+              </div>
+            </div>
 
-        <div className="text-xs text-gray-500">
-          {sentences.length} sentences • {text.trim().split(/\s+/).filter(Boolean).length} words
-        </div>
+            {/* Guidance panels */}
+            <div className="grid gap-4 md:grid-cols-2">
+              <GuidePanel title="What’s working" color="emerald">
+                {likes.length ? (
+                  likes.map((l, i) => (
+                    <li key={i}>
+                      <b>Sentence {l.index + 1}:</b> {l.why}
+                    </li>
+                  ))
+                ) : (
+                  <li className="text-[#9fb0d8]">No highlights yet.</li>
+                )}
+              </GuidePanel>
 
-        <div className="grid md:grid-cols-2 gap-3">
-          <Box title="What’s working" tone="green">
-            {likes.length
-              ? likes.map((l,i)=>(<li key={i}><b>Sentence {l.index+1}:</b> {l.why}</li>))
-              : <li className="text-gray-600">No highlights yet.</li>}
-          </Box>
-          <Box title="What needs work" tone="amber">
-            {needs.length
-              ? needs.map((l,i)=>(<li key={i}><b>Sentence {l.index+1}:</b> {l.why}</li>))
-              : <li className="text-gray-600">No issues flagged yet.</li>}
-          </Box>
-        </div>
+              <GuidePanel title="What needs work" color="amber">
+                {needs.length ? (
+                  needs.map((l, i) => (
+                    <li key={i}>
+                      <b>Sentence {l.index + 1}:</b> {l.why}
+                    </li>
+                  ))
+                ) : (
+                  <li className="text-[#9fb0d8]">No issues flagged.</li>
+                )}
+              </GuidePanel>
+            </div>
 
-        <div className="bg-white border rounded-2xl p-3">
-          <div className="font-medium mb-2">Sentence view</div>
-          <div className="space-y-2 text-sm">
-            {sentences.map((s,i)=> (
-              <div key={i} className={`p-2 rounded border ${sentenceClass(i)}`}>{s}</div>
-            ))}
-          </div>
+            {/* Sentence view */}
+            <div className="card">
+              <div className="p-4 border-b border-white/10 text-[#cbd3ea]">
+                Sentence view
+              </div>
+              <div className="p-4 space-y-2 text-sm">
+                {sentences.map((s, i) => (
+                  <div
+                    key={i}
+                    className={`p-2 rounded-md border ${toneFor(i)}`}
+                  >
+                    {s}
+                  </div>
+                ))}
+                {!sentences.length && (
+                  <div className="p-2 rounded-md border border-white/10 bg-white/5 text-[#9fb0d8]">
+                    Paste a draft to see sentence breakdown…
+                  </div>
+                )}
+              </div>
+            </div>
+          </section>
+
+          {/* RIGHT: rail */}
+          <aside className="space-y-4 lg:sticky lg:top-4 self-start">
+            {/* Score */}
+            <div className="card p-5">
+              <div className="text-sm text-[#cbd3ea]">Raw Essay Score</div>
+              <div className="mt-2 inline-flex items-baseline gap-2">
+                <span className="text-4xl font-extrabold text-white leading-none">
+                  {score}
+                </span>
+                <span className="text-xs text-[#8ea0c9]">/100</span>
+              </div>
+              {/* simple meter */}
+              <div className="mt-3 h-2 rounded-full bg-white/10 border border-white/10 overflow-hidden">
+                <div
+                  className="h-full rounded-full"
+                  style={{
+                    width: `${Math.max(0, Math.min(100, score))}%`,
+                    background:
+                      'linear-gradient(90deg, #34d399, #60a5fa)',
+                  }}
+                />
+              </div>
+            </div>
+
+            {/* AI detection */}
+            <div className="card p-5">
+              <div className="text-sm text-[#cbd3ea]">Local AI Detection</div>
+              <button className="btn btn-outline w-full mt-3">
+                Re-run Detection
+              </button>
+            </div>
+          </aside>
         </div>
       </div>
-
-      <div className="space-y-3">
-        <div className="bg-white rounded-2xl border p-4">
-          <div className="font-medium">Raw Essay Score</div>
-          <div className="text-4xl font-semibold mt-2">{score}</div>
-          <div className="text-xs text-gray-500">/100</div>
-        </div>
-        <div className="bg-white rounded-2xl border p-4">
-          <div className="font-medium">Local AI Detection</div>
-          <button className="mt-2 w-full border rounded-xl py-2">Re-run Detection</button>
-        </div>
-      </div>
-    </div>
+    </AppShell>
   );
 }
 
-function Box({ title, tone, children }){
-  const toneCls = tone === 'green' ? 'bg-green-50' : 'bg-amber-50';
+/* ---------- helpers ---------- */
+
+function GuidePanel({ title, color = 'emerald', children }) {
+  const colors =
+    color === 'emerald'
+      ? 'bg-emerald-500/5 border-emerald-400/20'
+      : 'bg-amber-500/5 border-amber-400/20';
+
   return (
-    <div className={`${toneCls} border rounded-2xl p-3`}>
-      <div className="font-medium">{title}</div>
+    <div className={`card p-4 ${colors}`}>
+      <div className="text-sm text-white/90">{title}</div>
       <ul className="text-sm mt-2 space-y-2">{children}</ul>
     </div>
   );

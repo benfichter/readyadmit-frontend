@@ -1,22 +1,44 @@
-import { createContext, useContext, useEffect, useState } from 'react'
-import { auth } from '../lib/api'
+// src/context/AuthContext.jsx
+import { createContext, useContext, useEffect, useMemo, useState } from 'react';
+import { api } from '../lib/api';
 
+const AuthContext = createContext(undefined);
 
-const Ctx = createContext(null)
-export const useAuth = () => useContext(Ctx)
+export function AuthProvider({ children }) {
+  const [user, setUser] = useState(null);
+  const [loading, setLoading] = useState(true);
 
+  useEffect(() => {
+    let alive = true;
+    (async () => {
+      try {
+        const token = localStorage.getItem('token');
+        if (!token) return;
+        const { data } = await api.get('/auth/me'); // hits /auth/me (not /api/auth/me)
+        if (alive) setUser(data);
+      } catch (e) {
+        console.warn('[auth] /auth/me failed:', e?.response?.status || e?.message);
+        localStorage.removeItem('token');
+      } finally {
+        if (alive) setLoading(false);
+      }
+    })();
+    return () => { alive = false; };
+  }, []);
 
-export function AuthProvider({ children }){
-const [user, setUser] = useState(null)
-const [loading, setLoading] = useState(true)
+  const signOut = () => {
+    localStorage.removeItem('token');
+    setUser(null);
+  };
 
+  const value = useMemo(() => ({ user, setUser, signOut, loading }), [user, loading]);
+  return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
+}
 
-useEffect(() => {
-const t = localStorage.getItem('token')
-if (!t) { setLoading(false); return }
-auth.me().then(setUser).finally(() => setLoading(false))
-}, [])
-
-
-return <Ctx.Provider value={{ user, setUser, loading }}>{children}</Ctx.Provider>
+export function useAuth() {
+  const ctx = useContext(AuthContext);
+  if (ctx === undefined) {
+    throw new Error('useAuth must be used within <AuthProvider>');
+  }
+  return ctx;
 }

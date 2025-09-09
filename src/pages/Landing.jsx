@@ -1,272 +1,310 @@
-// client/src/pages/Landing.jsx
-import { useEffect, useMemo, useRef, useState } from 'react'
-import { api } from '../lib/api'
-import HowItWorks from '../components/HowItWorks'
-import Features from '../components/Features'
-import Pricing from '../components/Pricing'
-import Footer from '../components/Footer'
+import AppShell from '../components/AppShell';
+import { useEffect, useMemo, useRef, useState } from 'react';
+import { api } from '../lib/api';
 
-/** Brand logo (square) */
-function BrandLogo({ className = "w-8 h-8" }) {
-  return (
-    <img
-      src="/logo.svg"
-      alt="ReadyAdmit"
-      width={32}
-      height={32}
-      className={className}
-      loading="eager"
-      decoding="async"
-    />
-  );
-}
+/* ------------------------------------------------------------
+   Data
+------------------------------------------------------------ */
+const SCHOOLS = [
+  'West Point','Duke','Carnegie Mellon','UT Austin','Vanderbilt',
+  'UNC Chapel Hill','UVA','Washington & Lee','William & Mary',
+  'Indiana Bloomington','Villanova','University of Maryland',
+  'Fordham','UMass Amherst',
+];
 
-/** --- DATA: school groups for swapping --- */
-const SCHOOL_GROUPS = {
-  ivy: [
-    "Harvard", "Yale", "Princeton", "Columbia",
-    "Brown", "Dartmouth", "Cornell", "UPenn"
-  ],
-  public: [
-    "UCLA", "UC Berkeley", "Michigan", "UT Austin",
-    "UNC Chapel Hill", "UVA", "UW–Madison", "Georgia Tech"
-  ],
-  liberal: [
-    "Williams", "Amherst", "Swarthmore", "Pomona",
-    "Harvey Mudd", "Wellesley", "Middlebury", "Carleton"
-  ]
-};
-
-/** utility: shuffled copy, stable per mount */
-function useShuffled(list) {
-  return useMemo(() => {
-    const arr = [...list];
-    for (let i = arr.length - 1; i > 0; i--) {
-      const j = Math.floor((i + 17) * 9301 % (i + 1)); // deterministic-ish
-      [arr[i], arr[j]] = [arr[j], arr[i]];
-    }
-    return arr;
-  }, [list]);
-}
-
-/** Rotating word with pause-on-hover & reduced-motion awareness */
-function RotatingWord({ items, interval = 2500 }) {
-  const prefersReduced = typeof window !== 'undefined'
-    ? window.matchMedia?.('(prefers-reduced-motion: reduce)')?.matches
-    : false;
-  const list = useShuffled(items);
-  const [i, setI] = useState(0);
-  const [tick, setTick] = useState(0);
-  const hovering = useRef(false);
-
+/* ------------------------------------------------------------
+   Helpers
+------------------------------------------------------------ */
+function useRevealOnScroll() {
   useEffect(() => {
-    if (prefersReduced) return;
-    const id = setInterval(() => {
-      if (hovering.current) return;
-      setI(v => (v + 1) < list.length ? v + 1 : 0);
-      setTick(t => t + 1);
-    }, interval);
-    return () => clearInterval(id);
-  }, [interval, list, prefersReduced]);
-
-  return (
-    <span
-      className="inline-block align-baseline"
-      onMouseEnter={() => { hovering.current = true; }}
-      onMouseLeave={() => { hovering.current = false; }}
-      style={{ transform: "translateY(-0.08em)" }}
-    >
-      <span key={tick} className="rotating-word swoop-in align-middle">
-        {list[i]}
-      </span>
-    </span>
-  );
+    const els = Array.from(document.querySelectorAll('[data-reveal]'));
+    const io = new IntersectionObserver((entries) => {
+      for (const e of entries) if (e.isIntersecting) e.target.classList.add('in');
+    }, { threshold: 0.08 });
+    els.forEach(el => io.observe(el));
+    return () => io.disconnect();
+  }, []);
 }
 
-/** Navbar */
-function Navbar() {
-  const [authed, setAuthed] = useState(false);
-  useEffect(() => { setAuthed(!!localStorage.getItem('token')); }, []);
+/* ------------------------------------------------------------
+   Ticker (always visible, no blur)
+------------------------------------------------------------ */
+function Ticker({ items }) {
+  const list = useMemo(() => [...items, ...items], [items]); // duplicate for seamless loop
   return (
-    <header className="sticky top-0 z-40 bg-white/80 backdrop-blur border-b border-gray-200">
-      <div className="max-w-7xl mx-auto px-4 py-3 flex items-center justify-between">
-        <a href="/" className="flex items-center gap-2">
-          <BrandLogo />
-          <span className="font-semibold text-gray-900">ReadyAdmit</span>
-        </a>
-        <nav className="hidden md:flex items-center gap-6">
-          {authed ? (
-            <>
-              <a href="/dashboard" className="btn btn-outline">Dashboard</a>
-              <button
-                onClick={() => { localStorage.removeItem('token'); window.location.reload(); }}
-                className="text-gray-700 hover:text-gray-900"
-              >
-                Sign Out
-              </button>
-            </>
-          ) : (
-            <>
-              <a href="/signin" className="hover:text-gray-900 text-gray-700">Sign In</a>
-              <a href="/signup" className="btn btn-primary">Sign Up</a>
-            </>
-          )}
-        </nav>
+    <div className="ticker">
+      <div className="ticker-inner">
+        {list.map((t, i) => (
+          <span key={i} className="ticker-item">{t}</span>
+        ))}
       </div>
-    </header>
+      <div className="ticker-fade" />
+    </div>
   );
 }
 
-/** Live demo card — fixed to use axios instance */
-function EssayPreview() {
-  const [essay, setEssay] = useState('')
-  const [loading, setLoading] = useState(false)
-  const [data, setData] = useState(null)  // { score, feedback[], rewritten_intro, note? }
-  const [err, setErr] = useState('')
+/* ------------------------------------------------------------
+   Mini Metric
+------------------------------------------------------------ */
+function Metric({ label, value }) {
+  return (
+    <div className="metric reveal" data-reveal>
+      <b>{value}</b>
+      <span>{label}</span>
+    </div>
+  );
+}
 
-  async function runPreview() {
-    setErr(''); setData(null)
-    if (!essay || essay.trim().length < 50) {
-      setErr('Paste at least ~50 characters so we can analyze your essay.')
-      return
+/* ------------------------------------------------------------
+   Hero demo card (kept but cleaner)
+------------------------------------------------------------ */
+function HeroPreview() {
+  const [essay, setEssay] = useState('');
+  const [busy, setBusy] = useState(false);
+  const [out, setOut] = useState(null);
+  const [err, setErr] = useState('');
+
+  async function run() {
+    setErr('');
+    setOut(null);
+    if ((essay || '').trim().length < 60) {
+      setErr('Paste a longer sample (~60+ chars).');
+      return;
     }
     try {
-      setLoading(true)
-      const { data } = await api.post('/essay-preview', { essay }) // <-- axios call
-      setData(data)
+      setBusy(true);
+      const { data } = await api.post('/essay-preview', { essay });
+      setOut(data);
     } catch (e) {
-      setErr(e?.response?.data?.error || e.message || 'Preview failed')
+      setErr(e?.response?.data?.error || 'Preview failed');
     } finally {
-      setLoading(false)
+      setBusy(false);
     }
   }
 
   return (
-    <div className="card" style={{ minHeight: 360 }}>
-      <div className="text-sm font-medium text-gray-700">Live Demo — AI Essay Preview</div>
+    <div className="card card-soft p-5 reveal" data-reveal>
+      <div className="text-sm text-[#cdd3ff] font-medium">Live Essay Preview</div>
       <textarea
-        className="mt-2 w-full h-40 border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-gray-900/10"
-        placeholder="Paste ~150–650 words. You'll get a score, 3 bullets of feedback, and a rewritten intro."
         value={essay}
-        onChange={e => setEssay(e.target.value)}
+        onChange={(e)=>setEssay(e.target.value)}
+        placeholder="Paste ~150–650 words. We’ll score it and rewrite your intro."
+        className="input h-36 mt-3"
       />
-      {err && <div className="mt-2 text-sm text-red-600">{err}</div>}
-      <button onClick={runPreview} disabled={loading} className="btn btn-primary mt-3 w-full">
-        {loading ? 'Analyzing…' : 'Score Your Essay'}
+      {err && <div className="mt-2 text-sm text-rose-400">{err}</div>}
+      <button className="btn btn-primary w-full mt-4" onClick={run} disabled={busy}>
+        {busy ? 'Analyzing…' : 'Score Your Essay'}
       </button>
 
-      {data && (
-        <div className="mt-4 space-y-3">
-          {data.note && (
-            <div className="text-xs text-amber-700 bg-amber-50 border border-amber-200 rounded-md p-2">
-              Demo mode: {data.note}
+      {out && (
+        <div className="mt-5 grid gap-3">
+          {'score' in out && (
+            <div className="card p-3">
+              <div className="text-xs text-[#aeb6d0]">Score</div>
+              <div className="text-2xl font-semibold text-white mt-1">
+                {Number(out.score).toFixed(1)} / 10
+              </div>
             </div>
           )}
-          {typeof data.score === 'number' && (
-            <div className="rounded-lg border border-gray-200 p-3">
-              <div className="text-sm font-semibold text-gray-900">Score</div>
-              <div className="text-2xl font-bold mt-1">{data.score.toFixed(1)} / 10</div>
-            </div>
-          )}
-          {Array.isArray(data.feedback) && data.feedback.length > 0 && (
-            <div className="rounded-lg border border-gray-200 p-3">
-              <div className="text-sm font-semibold text-gray-900">Feedback</div>
-              <ul className="list-disc pl-5 text-sm text-gray-800 mt-2">
-                {data.feedback.map((f, i) => <li key={i}>{f}</li>)}
+          {Array.isArray(out.feedback) && out.feedback.length > 0 && (
+            <div className="card p-3">
+              <div className="text-xs text-[#aeb6d0]">Feedback</div>
+              <ul className="list-disc pl-5 text-sm mt-1">
+                {out.feedback.map((f, i) => <li key={i}>{f}</li>)}
               </ul>
             </div>
           )}
-          {data.rewritten_intro && (
-            <div className="rounded-lg border border-gray-200 p-3 bg-gray-50">
-              <div className="text-sm font-semibold text-gray-900">Rewritten Intro</div>
-              <p className="mt-2 text-gray-800">{data.rewritten_intro}</p>
+          {out.rewritten_intro && (
+            <div className="card p-3">
+              <div className="text-xs text-[#aeb6d0]">Rewritten Intro</div>
+              <p className="mt-1 text-sm">{out.rewritten_intro}</p>
             </div>
           )}
         </div>
       )}
     </div>
-  )
+  );
 }
 
-/** --- HERO with school swapping --- */
-function SchoolTabs({ value, onChange }) {
-  const tabs = [
-    { id: 'ivy', label: 'Ivy' },
-    { id: 'public', label: 'Public' },
-    { id: 'liberal', label: 'Liberal Arts' },
-  ];
+/* ------------------------------------------------------------
+   Feature line (emoji icons to avoid extra deps)
+------------------------------------------------------------ */
+function Feature({ icon, title, children }) {
   return (
-    <div className="inline-flex items-center gap-1 p-1 rounded-xl border bg-white">
-      {tabs.map(t => (
-        <button
-          key={t.id}
-          onClick={() => onChange(t.id)}
-          className={`px-3 py-1.5 rounded-lg text-sm ${value===t.id ? 'bg-blue-600 text-white' : 'hover:bg-gray-100 text-gray-700'}`}
-          aria-pressed={value===t.id}
-        >
-          {t.label}
-        </button>
-      ))}
+    <div className="card p-6 reveal" data-reveal>
+      <div className="feature">
+        <div className="icon text-xl">{icon}</div>
+        <div>
+          <div className="text-sm font-semibold text-white">{title}</div>
+          <div className="text-sm text-[#c6cce0] mt-1">{children}</div>
+        </div>
+      </div>
     </div>
   );
 }
 
-/* ---------- PAGE DEFAULT EXPORT ---------- */
+/* ------------------------------------------------------------
+   Page
+------------------------------------------------------------ */
 export default function Landing() {
-  const [group, setGroup] = useState('ivy');
+  useRevealOnScroll();
 
   return (
-    <div className="min-h-screen bg-white">
-      <Navbar />
-
-      {/* Hero */}
-      <section className="py-20 bg-blue-grad">
-        <div className="max-w-7xl mx-auto px-4 grid md:grid-cols-2 gap-10 items-start">
-          <div>
-            <div className="badge flex items-center gap-2">
-              <span className="accent-dot" style={{ backgroundColor: '#22c55e' }} />
-              Earned over $2.3M+ in Merit Aid
-            </div>
-
-            <div className="mt-4 flex items-center gap-3">
-              <SchoolTabs value={group} onChange={setGroup} />
-              <span className="text-xs text-gray-500">Hover the school name to pause</span>
-            </div>
-
-            <h1 className="h1 mt-4">
-              Built by students admitted to{' '}
-              <RotatingWord items={SCHOOL_GROUPS[group]} />
-            </h1>
-
-            <p className="p mt-4">
-              Craft essays that punch, track applications, and unlock scholarships — with AI plus guidance from real admits.
-            </p>
-
-            <div className="mt-6 flex gap-3">
-              {localStorage.getItem('token') ? (
-                <>
-                  <a href="/dashboard" className="btn btn-primary">Open Dashboard</a>
-                  <a href="#how" className="btn btn-outline">See How It Works</a>
-                </>
-              ) : (
-                <>
-                  <a href="/signup" className="btn btn-primary">Start Free Today →</a>
-                  <a href="#how" className="btn btn-outline">See How It Works</a>
-                </>
-              )}
-            </div>
+    <AppShell>
+      {/* HERO */}
+      <section className="hero">
+        <div className="container">
+          <div className="kicker mb-3 badge">
+            <span>Earned $2.3M+ in Merit Aid</span>
           </div>
 
-          <EssayPreview />
+          <div className="grid gap-10 md:grid-cols-[1.05fr_.95fr] items-start">
+            {/* Left */}
+            <div>
+              <h1 className="reveal" data-reveal>
+                Craft essays that <span className="text-gradient">stand out</span>. <br />
+                Track applications. Unlock scholarships.
+              </h1>
+              <p className="text-[#b9c1d9] mt-4 max-w-xl reveal" data-reveal>
+                Built by students admitted to top schools, ReadyAdmit gives you punchy feedback,
+                clearer structure, and a calm plan from draft to submit.
+              </p>
+
+              <div className="mt-7 flex gap-3 reveal" data-reveal>
+                <a href="/signup" className="btn btn-primary">Start Free</a>
+                <a href="/signin" className="btn btn-secondary">Sign In</a>
+              </div>
+
+              <div className="mt-8 reveal" data-reveal>
+                <Ticker items={SCHOOLS} />
+              </div>
+            </div>
+
+            {/* Right */}
+            <HeroPreview />
+          </div>
         </div>
       </section>
 
-      {/* Sections */}
-      <HowItWorks id="how" />
-      <Features />
-      <Pricing />
+      {/* METRICS */}
+      <section className="section">
+        <div className="container grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+          <Metric label="Avg. essay score lift (first pass)" value="+23%" />
+          <Metric label="Extracurriculars reframed" value="12,400+" />
+          <Metric label="Deadlines tracked last cycle" value="8,900+" />
+          <Metric label="Merit aid surfaced" value="$2.3M+" />
+        </div>
+      </section>
 
-      <Footer />
-    </div>
-  )
+      {/* WHAT YOU GET */}
+      <section className="section">
+        <div className="container">
+          <h2 className="h2 mb-10">What you get</h2>
+          <div className="grid gap-6 lg:grid-cols-3">
+            <Feature icon="🖊️" title="AI Essay Insights">
+              Sentence-level highlights for clarity, voice, and authenticity. Get concrete rewrites on hooks and topic sentences.
+            </Feature>
+            <Feature icon="📌" title="SmartFrame™ EC Builder">
+              Turn activities into impact-driven lines that show initiative, scope, results, and reflection.
+            </Feature>
+            <Feature icon="📅" title="Deadlines & Apps">
+              One place for portals, supplementals, and reminders—see conflicts early and set mini-deadlines.
+            </Feature>
+          </div>
+        </div>
+      </section>
+
+      {/* HOW IT WORKS */}
+      <section className="section">
+        <div className="container grid gap-6 lg:grid-cols-3">
+          <div className="card p-6 reveal" data-reveal>
+            <div className="text-sm font-semibold text-white">1 · Build your profile</div>
+            <p className="text-sm text-[#c6cce0] mt-2">
+              Add ECs, awards, interests, and goals. SmartFrame™ turns them into high-impact lines.
+            </p>
+          </div>
+          <div className="card p-6 reveal" data-reveal>
+            <div className="text-sm font-semibold text-white">2 · Polish your essays</div>
+            <p className="text-sm text-[#c6cce0] mt-2">
+              Paste a draft, get a score and highlights. Iterate with instant rewrites for hooks and transitions.
+            </p>
+          </div>
+          <div className="card p-6 reveal" data-reveal>
+            <div className="text-sm font-semibold text-white">3 · Track & submit</div>
+            <p className="text-sm text-[#c6cce0] mt-2">
+              See all deadlines in one calendar, set mini-goals, and check off portals and supplementals.
+            </p>
+          </div>
+        </div>
+      </section>
+
+      {/* EXAMPLES */}
+      <section className="section">
+        <div className="container grid gap-6 lg:grid-cols-3">
+          <div className="card card-soft p-6 reveal" data-reveal>
+            <div className="text-sm font-semibold text-white">Common App Personal Essay</div>
+            <p className="text-sm text-[#c6cce0] mt-2">
+              Go from idea → outline → punchy draft. We keep your voice and tighten clarity and flow.
+            </p>
+          </div>
+          <div className="card card-soft p-6 reveal" data-reveal>
+            <div className="text-sm font-semibold text-white">Activities & Honors</div>
+            <p className="text-sm text-[#c6cce0] mt-2">
+              Turn “Member, Robotics Club” into leadership with measurable impact in 150 characters.
+            </p>
+          </div>
+          <div className="card card-soft p-6 reveal" data-reveal>
+            <div className="text-sm font-semibold text-white">Supplementals</div>
+            <p className="text-sm text-[#c6cce0] mt-2">
+              Show fit for “Why Us?” and “Community” prompts with crisp specifics and reflection.
+            </p>
+          </div>
+        </div>
+      </section>
+
+      {/* TESTIMONIALS */}
+      <section className="section">
+        <div className="container grid gap-6 lg:grid-cols-3">
+          {[
+            {
+              name: 'Aisha (VA)',
+              quote:
+                'My intro finally clicked. The highlights told me exactly why sentences worked or didn’t — I submitted with confidence.',
+            },
+            {
+              name: 'Marco (TX)',
+              quote:
+                'SmartFrame turned “club member” into leadership with outcomes. It changed how I wrote everything.',
+            },
+            {
+              name: 'Taryn (MA)',
+              quote:
+                'The calendar saved me — I saw two deadlines overlap and set a mini-deadline a week early.',
+            },
+          ].map((t) => (
+            <div key={t.name} className="card p-6 reveal" data-reveal>
+              <div className="quote">{t.quote}</div>
+              <small className="block mt-3">— {t.name}</small>
+            </div>
+          ))}
+        </div>
+      </section>
+
+      {/* PRICING CTA */}
+      <section className="section">
+        <div className="container">
+          <div className="card p-8 flex flex-col md:flex-row items-center justify-between gap-6">
+            <div>
+              <div className="text-xl font-semibold text-white">Ready to make your app stand out?</div>
+              <div className="text-sm text-[#c6cce0] mt-1">Start free — no credit card. Upgrade anytime.</div>
+            </div>
+            <div className="flex gap-3">
+              <a href="/signup" className="btn btn-primary">Start Free</a>
+              <a href="/pricing" className="btn btn-secondary">See Plans</a>
+            </div>
+          </div>
+        </div>
+      </section>
+    </AppShell>
+  );
 }

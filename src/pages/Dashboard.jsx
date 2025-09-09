@@ -1,10 +1,12 @@
+// src/pages/Dashboard.jsx
+import AppShell from '../components/AppShell';
 import { useEffect, useState } from 'react';
 import { api } from '../lib/api';
 import { Link } from 'react-router-dom';
+import Gauge from '../components/ui/Gauge';
 
-export default function Dashboard(){
+export default function Dashboard() {
   const [ov, setOv] = useState(null);
-  const [loading, setLoading] = useState(true);
   const [err, setErr] = useState('');
 
   useEffect(() => {
@@ -14,154 +16,199 @@ export default function Dashboard(){
         setOv(data);
       } catch (e) {
         setErr(e?.response?.data?.error || 'Failed to load overview');
-      } finally {
-        setLoading(false);
       }
     })();
   }, []);
 
-  if (loading) return <div className="text-sm text-gray-500 p-4">Loading…</div>;
-  if (err) return <div className="text-sm text-red-600 p-4">{err}</div>;
-  if (!ov) return null;
+  if (err) {
+    return (
+      <AppShell>
+        <div className="page-wrap">
+          <div className="card p-6 text-rose-300">{err}</div>
+        </div>
+      </AppShell>
+    );
+  }
+  if (!ov) {
+    return (
+      <AppShell>
+        <div className="page-wrap">
+          <div className="card p-6 text-sm text-gray-400">Loading…</div>
+        </div>
+      </AppShell>
+    );
+  }
 
   const s = ov.applications?.statuses || {};
+  const avgScoreText = Number.isFinite(ov?.essays?.avgScore)
+    ? Number(ov.essays.avgScore).toFixed(1)
+    : '—';
+
+  // Derive rawScore for the gauge from whatever your API returns
+  const rawScore =
+    Number.isFinite(ov?.essays?.latest?.score) ? ov.essays.latest.score :
+    Number.isFinite(ov?.essays?.avgScore)      ? ov.essays.avgScore :
+    Number.isFinite(ov?.essays?.lastScore)     ? ov.essays.lastScore :
+    null;
 
   return (
-    <div className="space-y-6">
-      {/* Top stats */}
-      <div className="grid md:grid-cols-4 gap-4">
-        <Stat title="Essays" value={(ov.essays?.avgScore ?? 0).toFixed(1)} helper="Based on latest AI preview" />
-        <Stat title="Extracurriculars" value={`${ov.extracurriculars?.count ?? 0}`} helper={`Aim for ${ov.extracurriculars?.target ?? 6} strong ECs`} />
-        <Stat title="Applications" value={`${ov.applications?.total ?? 0} total`} helper={`Drafting ${s.drafting||0} • Submitted ${s.submitted||0}`} />
-        <Stat title="Wins" value={`${s.accepted || 0}`} helper={`Submitted ${s.submitted||0} • Drafting ${s.drafting||0}`} />
-      </div>
+    <AppShell>
+      <div className="container space-y-8">
+        {/* STATS */}
+        <div className="grid gap-6 md:grid-cols-4">
+          <Stat title="Essay Score" value={avgScoreText} helper="Latest AI preview" />
+          <Stat
+            title="Extracurriculars"
+            value={`${ov.extracurriculars?.count ?? 0}`}
+            helper={`Target ${ov.extracurriculars?.target ?? 6}`}
+          />
+          <Stat
+            title="Applications"
+            value={`${ov.applications?.total ?? 0}`}
+            helper={`Drafting ${s.drafting || 0} • Submitted ${s.submitted || 0}`}
+          />
+          <Stat title="Wins" value={`${s.accepted || 0}`} helper="Accepted so far" />
+        </div>
 
-      {/* Suggestions + Gauge */}
-      <div className="grid md:grid-cols-3 gap-4">
-        <div className="md:col-span-2 bg-white rounded-2xl border p-4">
-          <div className="font-medium mb-2">Suggestions</div>
-          <ul className="text-sm text-gray-700 space-y-2">
-            {(ov.suggestions || []).map((t, i) => <li key={i}>⚠️ {t}</li>)}
-            {(!ov.suggestions || !ov.suggestions.length) && <li className="text-gray-500">No suggestions right now.</li>}
-          </ul>
-          <div className="mt-3 flex gap-2 text-sm">
-            <Link to="/essays" className="px-3 py-1.5 rounded-xl bg-blue-600 text-white">Improve Essay</Link>
-            <Link to="/extracurriculars" className="px-3 py-1.5 rounded-xl border">Add EC</Link>
-            <Link to="/applications" className="px-3 py-1.5 rounded-xl border">Track Apps</Link>
+        {/* SUGGESTIONS + GAUGE */}
+        <div className="grid gap-6 lg:grid-cols-3">
+          <div className="card p-5 lg:col-span-2">
+            <div className="card-title">Suggestions</div>
+            <ul className="mt-2 text-sm text-white/90 space-y-2">
+              {(ov.suggestions || []).map((t, i) => (
+                <li key={i}>⚠️ {t}</li>
+              ))}
+              {(!ov.suggestions || !ov.suggestions.length) && (
+                <li className="text-gray-500">No suggestions right now.</li>
+              )}
+            </ul>
+            <div className="mt-3 flex gap-2 text-sm">
+              <Link to="/essays" className="btn btn-primary">Improve Essay</Link>
+              <Link to="/extracurriculars" className="btn btn-outline">Add EC</Link>
+              <Link to="/applications" className="btn btn-outline">Track Apps</Link>
+            </div>
+          </div>
+
+          <div className="card p-5 flex items-center justify-center">
+            <Gauge value={rawScore} />
           </div>
         </div>
-        <Gauge value={ov.essays?.avgScore ?? 0} />
-      </div>
 
-      {/* Upcoming deadlines */}
-      <div className="bg-white rounded-2xl border p-4">
-        <div className="flex items-center justify-between">
-          <div className="font-medium">Upcoming Deadlines</div>
-          <Link to="/applications" className="text-sm">View All</Link>
+        {/* DEADLINES */}
+        <div className="card p-5">
+          <div className="flex items-center justify-between">
+            <div className="card-title">Upcoming Deadlines</div>
+            <Link to="/applications" className="link">View All</Link>
+          </div>
+          <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3 mt-3">
+            {(ov.deadlines || []).map((d) => (
+              <div key={d.id} className="mini-card">
+                <div className="font-medium">{d.title}</div>
+                <div className="text-xs text-gray-500">
+                  {new Date(d.due).toDateString()}
+                </div>
+              </div>
+            ))}
+            {(!ov.deadlines || !ov.deadlines.length) && (
+              <div className="text-sm text-gray-500">No deadlines yet.</div>
+            )}
+          </div>
         </div>
-        <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-3 mt-3">
-          {(ov.deadlines || []).map(d => (
-            <div key={d.id} className="rounded-xl border p-3">
-              <div className="text-sm font-medium">{d.title}</div>
-              <div className="text-xs text-gray-500">{new Date(d.due).toDateString()}</div>
-            </div>
-          ))}
-          {(!ov.deadlines || !ov.deadlines.length) && (
-            <div className="text-sm text-gray-500">No deadlines on file.</div>
-          )}
-        </div>
-      </div>
 
-      {/* Quick AI panels */}
-      <div className="grid md:grid-cols-2 gap-4">
-        <QuickPolish />
-        <QuickEC />
+        {/* QUICK AI */}
+        <div className="grid gap-6 lg:grid-cols-2">
+          <QuickPolish />
+          <QuickEC />
+        </div>
       </div>
-    </div>
+    </AppShell>
   );
 }
 
 function Stat({ title, value, helper }) {
   return (
-    <div className="bg-white rounded-2xl border p-4">
-      <div className="text-sm text-gray-500">{title}</div>
-      <div className="text-2xl font-semibold mt-1">{value}</div>
+    <div className="card p-5">
+      <div className="text-xs text-gray-500">{title}</div>
+      <div className="text-2xl font-semibold mt-1 text-white">{value}</div>
       {helper && <div className="text-xs text-gray-500 mt-1">{helper}</div>}
     </div>
   );
 }
 
-function Gauge({ value = 0 }) {
-  const v = Math.max(0, Math.min(100, Number(value)));
-  const angle = (v / 100) * 180;
-  const color = v >= 90 ? '#16a34a' : v >= 75 ? '#22c55e' : v >= 50 ? '#f59e0b' : '#dc2626';
-  return (
-    <div className="bg-white rounded-2xl border p-4">
-      <div className="text-sm text-gray-600 mb-2">Raw Essay Score</div>
-      <div className="relative w-full" style={{ height: 120 }}>
-        <svg viewBox="0 0 200 120" className="w-full h-full">
-          <path d="M10 110 A 90 90 0 0 1 190 110" fill="none" stroke="#e5e7eb" strokeWidth="16" />
-          <path d={`M10 110 A 90 90 0 ${angle > 90 ? 1 : 0} 1 ${10 + 180 * (v / 100)} 110`} fill="none" stroke={color} strokeWidth="16" strokeLinecap="round" />
-          <text x="100" y="100" textAnchor="middle" fontSize="28" fill="#111827">{v}</text>
-          <text x="100" y="115" textAnchor="middle" fontSize="10" fill="#6b7280">/ 100</text>
-        </svg>
-      </div>
-    </div>
-  );
-}
-
-function QuickPolish(){
+function QuickPolish() {
   const [text, setText] = useState('');
   const [out, setOut] = useState('');
-  const [loading, setLoading] = useState(false);
-  async function run(){
-    setLoading(true);
+  const [busy, setBusy] = useState(false);
+  const [err, setErr] = useState('');
+
+  async function run() {
+    setErr('');
+    setBusy(true);
     try {
       const { data } = await api.post('/quickai/polish-paragraph', { text });
       setOut(data.output);
+    } catch (e) {
+      setErr(e?.response?.data?.error || 'Failed to run polish');
     } finally {
-      setLoading(false);
+      setBusy(false);
     }
   }
+
   return (
-    <div className="bg-white rounded-2xl border p-4">
-      <div className="font-medium">⚡ Quick AI: Polish a Paragraph</div>
-      <textarea value={text} onChange={e=>setText(e.target.value)} className="w-full mt-2 border rounded-xl p-2 h-28" placeholder="Paste your paragraph..." />
+    <div className="card p-5">
+      <div className="card-title">⚡ Quick AI: Polish a Paragraph</div>
+      <textarea
+        className="input h-28 mt-2"
+        value={text}
+        onChange={(e) => setText(e.target.value)}
+        placeholder="Paste your paragraph..."
+      />
       <div className="mt-2 flex gap-2 text-sm">
-        <button onClick={run} className="px-3 py-1.5 rounded-xl bg-blue-600 text-white" disabled={loading}>
-          {loading ? 'Working…' : 'Preview & Improve'}
+        <button className="btn btn-primary" onClick={run} disabled={busy}>
+          {busy ? 'Working…' : 'Preview & Improve'}
         </button>
-        <Link to="/essays" className="px-3 py-1.5 rounded-xl border">Open Essays</Link>
       </div>
-      {out && <div className="mt-3 text-sm bg-blue-50 border rounded-xl p-3 whitespace-pre-wrap">{out}</div>}
+      {err && <div className="mt-2 text-sm text-rose-300">{err}</div>}
+      {out && <div className="note mt-3">{out}</div>}
     </div>
   );
 }
 
-function QuickEC(){
+function QuickEC() {
   const [text, setText] = useState('');
   const [out, setOut] = useState('');
-  const [loading, setLoading] = useState(false);
-  async function run(){
-    setLoading(true);
+  const [busy, setBusy] = useState(false);
+  const [err, setErr] = useState('');
+
+  async function run() {
+    setErr('');
+    setBusy(true);
     try {
       const { data } = await api.post('/quickai/strengthen-ec', { description: text });
       setOut(data.output);
+    } catch (e) {
+      setErr(e?.response?.data?.error || 'Failed to run EC builder');
     } finally {
-      setLoading(false);
+      setBusy(false);
     }
   }
+
   return (
-    <div className="bg-white rounded-2xl border p-4">
-      <div className="font-medium">⚡ Quick AI: Strengthen an EC</div>
-      <textarea value={text} onChange={e=>setText(e.target.value)} className="w-full mt-2 border rounded-xl p-2 h-28" placeholder="e.g., Led robotics club..." />
+    <div className="card p-5">
+      <div className="card-title">⚡ Quick AI: Strengthen an EC</div>
+      <textarea
+        className="input h-28 mt-2"
+        value={text}
+        onChange={(e) => setText(e.target.value)}
+        placeholder="e.g., Led robotics club…"
+      />
       <div className="mt-2 flex gap-2 text-sm">
-        <button onClick={run} className="px-3 py-1.5 rounded-xl bg-blue-600 text-white" disabled={loading}>
-          {loading ? 'Working…' : 'Preview & Improve'}
+        <button className="btn btn-primary" onClick={run} disabled={busy}>
+          {busy ? 'Working…' : 'Preview & Improve'}
         </button>
-        <Link to="/extracurriculars" className="px-3 py-1.5 rounded-xl border">Open ECs</Link>
       </div>
-      {out && <div className="mt-3 text-sm bg-green-50 border rounded-xl p-3 whitespace-pre-wrap">{out}</div>}
+      {err && <div className="mt-2 text-sm text-rose-300">{err}</div>}
+      {out && <div className="note mt-3">{out}</div>}
     </div>
   );
 }
