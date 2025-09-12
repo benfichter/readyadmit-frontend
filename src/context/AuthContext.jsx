@@ -1,44 +1,43 @@
-// src/context/AuthContext.jsx
 import { createContext, useContext, useEffect, useMemo, useState } from 'react';
 import { api } from '../lib/api';
 
-const AuthContext = createContext(undefined);
+const AuthCtx = createContext(null);
 
-export function AuthProvider({ children }) {
+export const useAuth = () => useContext(AuthCtx);
+
+export const AuthProvider = ({ children }) => {
   const [user, setUser] = useState(null);
   const [loading, setLoading] = useState(true);
 
+  // bootstrap from token
   useEffect(() => {
-    let alive = true;
+    const t = localStorage.getItem('token');
+    if (!t) {
+      setLoading(false);
+      return;
+    }
     (async () => {
       try {
-        const token = localStorage.getItem('token');
-        if (!token) return;
-        const { data } = await api.get('/auth/me'); // hits /auth/me (not /api/auth/me)
-        if (alive) setUser(data);
-      } catch (e) {
-        console.warn('[auth] /auth/me failed:', e?.response?.status || e?.message);
+        const { data } = await api.get('/auth/me');
+        setUser(data);
+      } catch {
         localStorage.removeItem('token');
       } finally {
-        if (alive) setLoading(false);
+        setLoading(false);
       }
     })();
-    return () => { alive = false; };
   }, []);
 
-  const signOut = () => {
+  function signOut() {
     localStorage.removeItem('token');
+    localStorage.removeItem('rememberEmail');
     setUser(null);
-  };
+  }
 
   const value = useMemo(() => ({ user, setUser, signOut, loading }), [user, loading]);
-  return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
-}
 
-export function useAuth() {
-  const ctx = useContext(AuthContext);
-  if (ctx === undefined) {
-    throw new Error('useAuth must be used within <AuthProvider>');
-  }
-  return ctx;
-}
+  return <AuthCtx.Provider value={value}>{children}</AuthCtx.Provider>;
+};
+
+// also export default for compatibility with default imports
+export default AuthProvider;

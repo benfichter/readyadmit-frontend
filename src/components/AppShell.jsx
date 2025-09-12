@@ -1,13 +1,14 @@
+// src/components/AppShell.jsx
+import Header from './Header';
 import SideNav from './SideNav';
-import MarketingHeader from './MarketingHeader';
 import { useLocation } from 'react-router-dom';
 
 const IN_APP_ROUTES = [
   '/dashboard',
   '/essays',
+  '/essaysworkspace',          // new editor base
   '/applications',
   '/extracurriculars',
-  '/deadlines',
   '/settings',
 ];
 
@@ -17,14 +18,12 @@ export default function AppShell({ children }) {
     (p) => pathname === p || pathname.startsWith(p + '/')
   );
 
-  // Show header only on marketing pages; no header on in-app.
-  const showHeader = !inApp;
-  const HEADER_H = 64;
+  const HEADER_H = 64; // h-16
 
   return (
     <div className="app-root">
-      {showHeader && <MarketingHeader />}
-      <div style={{ paddingTop: showHeader ? HEADER_H : 0 }}>
+      <Header />
+      <div style={{ paddingTop: HEADER_H }}>
         {inApp ? (
           <div className="container app-frame">
             <SideNav />

@@ -1,40 +1,29 @@
-import { NavLink, useLocation } from 'react-router-dom';
-import {
-  LayoutDashboard, FileText, BookOpen, Trophy, CalendarDays, Settings
-} from 'lucide-react';
+// src/components/SideNav.jsx
+import { NavLink } from "react-router-dom";
 
-const items = [
-  { to: '/dashboard', label: 'Overview', icon: LayoutDashboard },
-  { to: '/essays', label: 'Essays', icon: FileText },
-  { to: '/applications', label: 'Applications', icon: BookOpen },
-  { to: '/extracurriculars', label: 'Extracurriculars', icon: Trophy },
-  { to: '/deadlines', label: 'Deadlines', icon: CalendarDays },
-  { to: '/settings', label: 'Settings', icon: Settings },
-];
+const LinkItem = ({ to, children, icon }) => (
+  <NavLink
+    to={to}
+    className={({ isActive }) =>
+      `sidenav-link ${isActive ? "active" : ""}`
+    }
+  >
+    <span className="sidenav-icon">{icon}</span>
+    <span>{children}</span>
+  </NavLink>
+);
 
 export default function SideNav() {
-  const loc = useLocation();
-
   return (
     <aside className="sidenav">
       <div className="sidenav-scroller">
-        <div className="sidenav-section">
-          <div className="sidenav-title">ReadyAdmit</div>
-          <nav className="sidenav-list">
-            {items.map(({ to, label, icon: Icon }) => (
-              <NavLink
-                key={to}
-                to={to}
-                className={({ isActive }) =>
-                  `sidenav-link ${isActive || loc.pathname.startsWith(to) ? 'active' : ''}`
-                }
-                end={to === '/dashboard'}
-              >
-                <Icon size={18} className="sidenav-icon" />
-                <span>{label}</span>
-              </NavLink>
-            ))}
-          </nav>
+        <div className="sidenav-title">Navigate</div>
+        <div className="sidenav-list">
+          <LinkItem to="/dashboard" icon="🏠">Dashboard</LinkItem>
+          <LinkItem to="/applications" icon="🎯">Applications</LinkItem>
+          <LinkItem to="/essays" icon="📝">Essays</LinkItem>
+          <LinkItem to="/extracurriculars" icon="🏅">Extracurriculars</LinkItem>
+          {/* <LinkItem to="/settings" icon="⚙️">Settings</LinkItem> */}
         </div>
       </div>
     </aside>

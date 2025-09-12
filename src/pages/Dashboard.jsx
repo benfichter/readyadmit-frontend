@@ -3,7 +3,6 @@ import AppShell from '../components/AppShell';
 import { useEffect, useState } from 'react';
 import { api } from '../lib/api';
 import { Link } from 'react-router-dom';
-import Gauge from '../components/ui/Gauge';
 
 export default function Dashboard() {
   const [ov, setOv] = useState(null);
@@ -44,7 +43,6 @@ export default function Dashboard() {
     ? Number(ov.essays.avgScore).toFixed(1)
     : '—';
 
-  // Derive rawScore for the gauge from whatever your API returns
   const rawScore =
     Number.isFinite(ov?.essays?.latest?.score) ? ov.essays.latest.score :
     Number.isFinite(ov?.essays?.avgScore)      ? ov.essays.avgScore :
@@ -70,16 +68,16 @@ export default function Dashboard() {
           <Stat title="Wins" value={`${s.accepted || 0}`} helper="Accepted so far" />
         </div>
 
-        {/* SUGGESTIONS + GAUGE */}
+        {/* SUGGESTIONS + SCORE */}
         <div className="grid gap-6 lg:grid-cols-3">
           <div className="card p-5 lg:col-span-2">
             <div className="card-title">Suggestions</div>
-            <ul className="mt-2 text-sm text-white/90 space-y-2">
+            <ul className="suggestion-list">
               {(ov.suggestions || []).map((t, i) => (
-                <li key={i}>⚠️ {t}</li>
+                <li key={i} className="suggestion-item">{t}</li>
               ))}
               {(!ov.suggestions || !ov.suggestions.length) && (
-                <li className="text-gray-500">No suggestions right now.</li>
+                <li className="suggestion-empty">No suggestions right now.</li>
               )}
             </ul>
             <div className="mt-3 flex gap-2 text-sm">
@@ -89,8 +87,18 @@ export default function Dashboard() {
             </div>
           </div>
 
-          <div className="card p-5 flex items-center justify-center">
-            <Gauge value={rawScore} />
+          <div className="card p-5">
+            <div className="card-title">Your latest essay score</div>
+            <div className="score-slab mt-2">
+              <span className="num">{Number.isFinite(rawScore) ? Math.round(rawScore) : '—'}</span>
+              <span className="den">/100</span>
+            </div>
+            <div className="score-meter" style={{ '--score': `${Math.max(0, Math.min(100, Number(rawScore ?? 0)))}` }} />
+            <div className="text-xs text-[#9fb0d8] mt-2">Based on your most recent draft</div>
+            <div className="mt-3 flex gap-2 text-sm">
+              <Link to="/essays" className="btn btn-primary">Open Essay Workspace</Link>
+              <Link to="/essaysworkspace" className="btn btn-outline">See Highlights</Link>
+            </div>
           </div>
         </div>
 
@@ -101,14 +109,26 @@ export default function Dashboard() {
             <Link to="/applications" className="link">View All</Link>
           </div>
           <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3 mt-3">
-            {(ov.deadlines || []).map((d) => (
-              <div key={d.id} className="mini-card">
-                <div className="font-medium">{d.title}</div>
-                <div className="text-xs text-gray-500">
-                  {new Date(d.due).toDateString()}
+            {(ov.deadlines || []).map((d) => {
+              const now = new Date();
+              const due = new Date(d.due);
+              const days = Math.ceil((+due - +now) / 86400000);
+              const tone = days < 0 ? 'is-past' : days === 0 ? 'is-today' : days <= 7 ? 'is-soon' : 'is-far';
+              const label = days < 0
+                ? `${Math.abs(days)} day${Math.abs(days) === 1 ? '' : 's'} overdue`
+                : days === 0
+                ? 'Due today'
+                : days === 1
+                ? 'Due tomorrow'
+                : `In ${days} days`;
+              return (
+                <div key={d.id} className={`mini-card ${tone}`}>
+                  <div className="title">{d.title}</div>
+                  <div className="date">{due.toLocaleDateString()}</div>
+                  <div className="sub">{label}</div>
                 </div>
-              </div>
-            ))}
+              );
+            })}
             {(!ov.deadlines || !ov.deadlines.length) && (
               <div className="text-sm text-gray-500">No deadlines yet.</div>
             )}
@@ -143,6 +163,10 @@ function QuickPolish() {
 
   async function run() {
     setErr('');
+    if (!text.trim()) {
+      setOut('Paste a paragraph to preview and improve.');
+      return;
+    }
     setBusy(true);
     try {
       const { data } = await api.post('/quickai/polish-paragraph', { text });
@@ -212,3 +236,4 @@ function QuickEC() {
     </div>
   );
 }
+

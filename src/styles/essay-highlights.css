@@ -1,3 +1,41 @@
-/* placeholder – wire up your green/yellow inline highlights later */
+/* Inline Grammarly-like highlights overlay for the Essay editor */
+.editor-hl-wrap{ position: relative; overflow: visible; }
+.editor-hl-wrap .hl-tip{
+  position: absolute; z-index: 60; pointer-events: none;
+  max-width: min(640px, 92vw);
+  background: linear-gradient(180deg, rgba(17, 3, 50, 0.92), rgba(17, 3, 50, 0.92)); /* softer indigo/violet */
+  color:#f7f4ff;
+  border:1px solid rgba(167,139,250,.45);
+  padding: .55rem .7rem; border-radius: 12px; font-size: .84rem; line-height: 1.25;
+  box-shadow: 0 14px 42px -18px rgba(136, 93, 210, 0.35);
+  transform: translate(-50%, -8px);
+}
+.editor-hl-wrap .hl-tip::after{
+  content:""; position:absolute; left:50%; transform:translateX(-50%); top:100%;
+  width:0; height:0; border-left:8px solid transparent; border-right:8px solid transparent;
+  border-top:8px solid rgba(109,40,217,.9); /* match gradient base */
+}
+.editor-hl-wrap .hl-tip::before{
+  content:""; position:absolute; left:50%; transform:translateX(-50%); top:100%;
+  width:2px; height:10px; background: rgba(109,40,217,.9); opacity:.9;
+}
+.editor-hl-wrap .hl-surface{
+  position: absolute; inset: 0; overflow: hidden; pointer-events: none; z-index: 2;
+  /* padding must be 0 — inner <pre> mirrors the textarea padding exactly */
+  padding: 0;
+}
+.editor-hl-wrap .hl-pre{
+  margin: 0; white-space: pre-wrap; word-wrap: break-word; font: inherit; line-height: inherit;
+  color: transparent;       /* let only highlight backgrounds show through */
+}
+.editor-hl-wrap .hl{ position: relative; border-radius: 4px; padding: 0 .06em; pointer-events: auto; }
+.editor-hl-wrap .hl-good{ background: rgba(52, 211, 153, .22); outline: 1px solid rgba(52,211,153,.35); }
+.editor-hl-wrap .hl-meh { background: rgba(250, 204, 21, .22);  outline: 1px solid rgba(250,204,21,.35); }
+
+/* Tooltip on hover */
+/* Disable CSS pseudo tooltip to avoid duplicate with JS tooltip */
+.editor-hl-wrap .hl::after{ content: none !important; }
+
+/* Legacy class compatibility, if used somewhere else */
 .highlight-good { background: rgba(34,197,94,.2); }
-.highlight-meh { background: rgba(234,179,8,.2); }
+.highlight-meh  { background: rgba(234,179,8,.2); }
