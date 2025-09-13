@@ -13,6 +13,7 @@ export default function MenuSelect({
   className = "",
   labelFormatter,
   menuMatchTrigger = true, // keep true to match trigger width
+  closeOnSelect = true,
 }) {
   const [open, setOpen] = useState(false);
   const rootRef = useRef(null);
@@ -94,7 +95,14 @@ export default function MenuSelect({
                 role="option"
                 aria-selected={active}
                 className={`ms-item ${active ? "is-active" : ""}`}
-                onClick={() => { onChange?.(it.value); setOpen(false); }}
+                onMouseDown={(e) => {
+                  // Close ASAP to avoid re-open flicker; then notify parent
+                  e.preventDefault();
+                  e.stopPropagation();
+                  if (closeOnSelect) setOpen(false);
+                  // Defer parent change to next tick to ensure close applied first
+                  setTimeout(() => onChange?.(it.value), 0);
+                }}
               >
                 <span className="ms-dot" />
                 <span className="truncate">{it.label}</span>

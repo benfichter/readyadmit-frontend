@@ -48,11 +48,13 @@ export default function Extracurriculars() {
   }
   function rankLabel(r) {
     const s = rankScore(r);
-    return s >= 7 ? 'Gold' : s >= 4 ? 'Silver' : 'Bronze';
+    // Re-label ranks: Diamond (top), Gold (mid), Silver (base)
+    // Easier thresholds: more activities reach higher tiers
+    return s >= 5 ? 'Diamond' : s >= 3 ? 'Gold' : 'Silver';
   }
   function rankClass(r) {
     const l = rankLabel(r);
-    return l === 'Gold' ? 'rank-gold' : l === 'Silver' ? 'rank-silver' : 'rank-bronze';
+    return l === 'Diamond' ? 'rank-diamond' : l === 'Gold' ? 'rank-gold' : 'rank-silver';
   }
   const filtered = useMemo(() => {
     const q = search.trim().toLowerCase();
@@ -365,10 +367,13 @@ export default function Extracurriculars() {
 
 {sort === 'rank' && (
   <span className="drag-handle" title="Drag to reorder" aria-hidden>
-    <svg width="22" height="22" viewBox="0 0 24 24" fill="none">
-      <circle cx="7" cy="7" r="1.2" fill="currentColor"/><circle cx="12" cy="7" r="1.2" fill="currentColor"/><circle cx="17" cy="7" r="1.2" fill="currentColor"/>
-      <circle cx="7" cy="12" r="1.2" fill="currentColor"/><circle cx="12" cy="12" r="1.2" fill="currentColor"/><circle cx="17" cy="12" r="1.2" fill="currentColor"/>
-      <circle cx="7" cy="17" r="1.2" fill="currentColor"/><circle cx="12" cy="17" r="1.2" fill="currentColor"/><circle cx="17" cy="17" r="1.2" fill="currentColor"/>
+    <svg width="22" height="22" viewBox="0 0 32 32" fill="none">
+      <circle cx="7" cy="8" r="1.2" fill="currentColor"/>
+      <circle cx="12" cy="8" r="1.2" fill="currentColor"/>
+      <circle cx="17" cy="8" r="1.2" fill="currentColor"/>
+      <circle cx="7" cy="16" r="1.2" fill="currentColor"/>
+      <circle cx="12" cy="16" r="1.2" fill="currentColor"/>
+      <circle cx="17" cy="16" r="1.2" fill="currentColor"/>
     </svg>
   </span>
 )}
@@ -378,7 +383,7 @@ export default function Extracurriculars() {
                         {x.organization && (
                           <span className="badge">{x.organization}</span>
                         )}
-                        <span className={`badge ${rankLabel(x) === 'Gold' ? 'text-emerald-300' : rankLabel(x) === 'Silver' ? 'text-sky-300' : 'text-amber-300'}`}>
+                        <span className={`badge ${rankLabel(x) === 'Diamond' ? 'text-sky-300' : rankLabel(x) === 'Gold' ? 'text-amber-300' : 'text-slate-300'}`}>
                           {rankLabel(x)}
                         </span>
                       </div>

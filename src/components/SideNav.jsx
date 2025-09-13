@@ -20,12 +20,14 @@ export default function SideNav() {
         <div className="sidenav-title">Navigate</div>
         <div className="sidenav-list">
           <LinkItem to="/dashboard" icon="🏠">Dashboard</LinkItem>
-          <LinkItem to="/applications" icon="🎯">Applications</LinkItem>
+          <LinkItem to="/applications" icon="📄">Applications</LinkItem>
           <LinkItem to="/essays" icon="📝">Essays</LinkItem>
-          <LinkItem to="/extracurriculars" icon="🏅">Extracurriculars</LinkItem>
-          {/* <LinkItem to="/settings" icon="⚙️">Settings</LinkItem> */}
+          <LinkItem to="/extracurriculars" icon="🎯">Extracurriculars</LinkItem>
+          <LinkItem to="/honors" icon="🏅">Honors</LinkItem>
+          <LinkItem to="/settings" icon="⚙️">Settings</LinkItem>
         </div>
       </div>
     </aside>
   );
 }
+

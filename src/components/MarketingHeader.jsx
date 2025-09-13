@@ -11,7 +11,7 @@ export default function MarketingHeader() {
   return (
     <header className="m-header fixed top-0 inset-x-0 z-[9999]">
       <div className="m-header-line" />
-      <div className="container h-16 flex items-center justify-between">
+      <div className="container h-20 flex items-center justify-between">
         {/* Brand */}
         <Link to="/" className="flex items-center gap-2 text-white">
           <img src="/logo.svg" alt="ReadyAdmit" className="w-6 h-6 drop-shadow-sm" />

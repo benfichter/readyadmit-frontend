@@ -11,6 +11,7 @@ import Applications from './pages/Applications';
 import ApplicationWorkspace from './pages/ApplicationWorkspace';
 import Extracurriculars from './pages/Extracurriculars';
 import Settings from './pages/Settings';
+import Honors from './pages/Honors';
 
 // NEW: Essays overview + standalone editor routes
 import EssaysIndex from './pages/EssaysIndex';
@@ -52,6 +53,7 @@ export default function App() {
 
       {/* Other sections */}
       <Route path="/extracurriculars" element={<Protected><Extracurriculars /></Protected>} />
+      <Route path="/honors" element={<Protected><Honors /></Protected>} />
       <Route path="/settings" element={<Protected><Settings /></Protected>} />
 
       {/* 404 */}

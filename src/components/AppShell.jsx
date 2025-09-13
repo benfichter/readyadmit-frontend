@@ -9,6 +9,7 @@ const IN_APP_ROUTES = [
   '/essaysworkspace',          // new editor base
   '/applications',
   '/extracurriculars',
+  '/honors',
   '/settings',
 ];
 
@@ -18,7 +19,7 @@ export default function AppShell({ children }) {
     (p) => pathname === p || pathname.startsWith(p + '/')
   );
 
-  const HEADER_H = 64; // h-16
+  const HEADER_H = 80; // h-20
 
   return (
     <div className="app-root">

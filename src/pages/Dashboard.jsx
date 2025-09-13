@@ -38,6 +38,14 @@ export default function Dashboard() {
     );
   }
 
+  function suggestionTo(t) {
+    const s = String(t || '').toLowerCase();
+    if (s.includes('essay') || s.includes('hook') || s.includes('intro') || s.includes('draft')) return '/essays';
+    if (s.includes('ec') || s.includes('extracurricular') || s.includes('activity')) return '/extracurriculars';
+    if (s.includes('deadline') || s.includes('application') || s.includes('submit') || s.includes('supp')) return '/applications';
+    return '/dashboard';
+  }
+
   const s = ov.applications?.statuses || {};
   const avgScoreText = Number.isFinite(ov?.essays?.avgScore)
     ? Number(ov.essays.avgScore).toFixed(1)
@@ -74,7 +82,9 @@ export default function Dashboard() {
             <div className="card-title">Suggestions</div>
             <ul className="suggestion-list">
               {(ov.suggestions || []).map((t, i) => (
-                <li key={i} className="suggestion-item">{t}</li>
+                <li key={i} className="suggestion-item">
+                  <Link to={suggestionTo(t)} className="block w-full">{t}</Link>
+                </li>
               ))}
               {(!ov.suggestions || !ov.suggestions.length) && (
                 <li className="suggestion-empty">No suggestions right now.</li>
@@ -236,4 +246,3 @@ function QuickEC() {
     </div>
   );
 }
-

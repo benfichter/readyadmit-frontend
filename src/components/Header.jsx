@@ -11,19 +11,20 @@ export default function Header() {
     '/essays',
     '/applications',
     '/extracurriculars',
+    '/honors',
     '/settings',
   ].some((p) => pathname === p || pathname.startsWith(p + '/'));
 
   return (
     <header
-      className="fixed top-0 inset-x-0 h-16 z-[1000] navbar"
+      className="fixed top-0 inset-x-0 h-20 z-[1000] navbar"
       role="banner"
     >
       <div className="container h-full flex items-center justify-between">
         {/* Brand */}
         <div className="flex items-center gap-2">
           <Link to="/" className="flex items-center gap-2">
-            <img src="/logo.svg" alt="ReadyAdmit" className="w-6 h-6" />
+            <img src="/logo.svg" alt="ReadyAdmit" className="w-6 h-6 drop-shadow-sm" />
             <span className="font-semibold tracking-tight text-white">
               ReadyAdmit
             </span>
