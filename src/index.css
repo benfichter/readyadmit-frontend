@@ -321,7 +321,7 @@ body::before{
 }
 .ticker-inner{
   display:flex; gap: 3rem; white-space: nowrap; padding: .7rem 1.2rem;
-  animation: ticker-scroll 35s linear infinite;
+  animation: ticker-scroll 10s linear infinite;
 }
 .ticker-item{ display:inline-flex; align-items:center; gap:.8rem; color:#e8edff; opacity:.95; font-weight:600; line-height:1; }
 .ticker-item span{ display:inline-block; line-height:20px; letter-spacing:.1px; }
