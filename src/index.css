@@ -442,6 +442,14 @@ body::before{
 .nav-cta:hover{ background-position: 100% 0; box-shadow: 0 22px 54px -22px rgba(99,102,241,.7), 0 10px 22px -12px rgba(37,99,235,.45); }
 .nav-cta:active{ transform: translateY(1px) scale(.99); }
 
+/* Mobile: slim header buttons */
+@media (max-width: 480px){
+  .navbar .container{ padding-left: 12px; padding-right: 12px; }
+  .navbar .container > .flex{ gap:.45rem; }
+  .nav-signin{ padding:.38rem .55rem; font-size:.85rem; }
+  .nav-cta{ padding:.45rem .7rem; font-size:.88rem; font-weight:700; border-radius: 12px; }
+}
+
 /* Optional: match your existing .glass header wrapper */
 .glass{ @apply backdrop-blur-md; background: rgba(15,18,24,.66); }
 .gradient-border::after{
