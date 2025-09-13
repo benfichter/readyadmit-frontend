@@ -40,6 +40,8 @@ html, body {
   background: var(--bg);
   color: var(--text);
   min-height: 100%;
+  max-width: 100%;
+  overflow-x: hidden; /* guard against accidental horizontal scroll on mobile */
 }
 
 /* subtle grid background */
@@ -374,7 +376,7 @@ body::before{
 /* =========================
    Media Gallery
    ========================= */
-.media-grid{ position:relative; display:grid; grid-template-columns: 1fr; gap: 1rem; }
+.media-grid{ position:relative; display:grid; grid-template-columns: 1fr; gap: 1rem; overflow: hidden; }
 @media (min-width: 1024px){ .media-grid{ grid-template-columns: repeat(3, 1fr); gap: 1.1rem; } }
 .media-grid::before,
 .media-grid::after{
@@ -1450,11 +1452,16 @@ section#features .container > .grid::before{
 #get-started .cta-stars i:nth-child(15){ left:84%; top:86%; animation-delay:2.9s }
 #get-started .cta-stars i:nth-child(16){ left:92%; top:86%; animation-delay:3.1s }
 #get-started .getstart-content{ position:relative; z-index:1; padding: 20px 24px; background: transparent; backdrop-filter: blur(2px); border-radius:16px; border:1px solid var(--border); display:flex; flex-direction:column; gap:.7rem; align-items:center; text-align:center; }
-#get-started .pitch{ font-size: 1.05rem; font-weight: 700; color:#e8eaf2; letter-spacing:.2px; white-space: nowrap; }
-#get-started .actions{ display:flex; gap:.6rem; flex-wrap: wrap; }
+#get-started .pitch{ font-size: 1.05rem; font-weight: 700; color:#e8eaf2; letter-spacing:.2px; white-space: normal; }
+#get-started .actions{ display:flex; gap:.6rem; flex-wrap: wrap; justify-content: center; }
 @media (min-width: 768px){
   #get-started .getstart-content{ flex-direction: row; justify-content: space-between; text-align: left; }
+  #get-started .pitch{ white-space: nowrap; }
 }
+
+/* Header mobile safety: prevent child overflow from causing horizontal scroll */
+.navbar .container { min-width: 0; overflow: hidden; }
+.navbar .container > * { min-width: 0; }
 
 /* Reuse drifting ribbons behind the testimonials containers */
 .creative-wrap .ribbons{ display:none; }
