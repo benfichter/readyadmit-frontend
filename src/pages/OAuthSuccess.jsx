@@ -16,12 +16,16 @@ export default function OAuthSuccess() {
     }
     localStorage.setItem('token', token);
 
-    // hydrate user
+    // hydrate user and route to onboarding if needed
     (async () => {
       try {
-        const me = await api.get('/auth/me');
+        const me = await api.get('/users/me');
         setUser(me.data);
-        nav('/dashboard', { replace: true });
+        if (me?.data && me.data.onboarded === false) {
+          nav('/onboarding', { replace: true });
+        } else {
+          nav('/dashboard', { replace: true });
+        }
       } catch {
         nav('/signin');
       }

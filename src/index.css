@@ -1484,3 +1484,14 @@ section#features .container > .grid::before{
   animation: subtleSlide 12s linear infinite;
 }
 @keyframes subtleSlide{ from{ background-position: 0% 0 } to{ background-position: 100% 0 } }
+
+/* optional: pretty scrollbars */
+.custom-scroll, .card-body .overflow-y-auto {
+  scrollbar-width: thin;
+}
+.custom-scroll::-webkit-scrollbar,
+.card-body .overflow-y-auto::-webkit-scrollbar { height: 10px; width: 10px; }
+.custom-scroll::-webkit-scrollbar-thumb,
+.card-body .overflow-y-auto::-webkit-scrollbar-thumb { background: rgba(255,255,255,.12); border-radius: 999px; }
+.custom-scroll::-webkit-scrollbar-track,
+.card-body .overflow-y-auto::-webkit-scrollbar-track { background: transparent; }

@@ -34,7 +34,7 @@ export default function SignUp() {
       // your /auth/login creates the user if not found
       const { data } = await api.post('/auth/login', { email: email.trim(), name: name.trim() });
       localStorage.setItem('token', data.token);
-      const me = await api.get('/auth/me');
+    const me = await api.get('/users/me');
       setUser(me.data);
       nav('/dashboard');
     } catch (e) {

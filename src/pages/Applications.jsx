@@ -6,7 +6,6 @@ import { Link, useNavigate } from 'react-router-dom';
 import MenuSelect from '../components/ui/MenuSelect';
 import CalendarSelect from '../components/ui/CalendarSelect';
 
-
 const cal = (d) => {
   const start = new Date(d.getFullYear(), d.getMonth(), 1);
   const end = new Date(d.getFullYear(), d.getMonth() + 1, 0);
@@ -219,47 +218,43 @@ export default function ApplicationsPage() {
             </div>
           </div>
 
-          {/* List: only Status (editable), Due date (editable), Open */}
+          {/* List: Status (editable), Due date (editable), Open */}
           <div className="space-y-3">
             {shown.map((a) => (
               <article key={a.id} className="card">
                 <div className="card-body">
-                  <div className="font-medium text-white text-lg">{a.college || 'Untitled'}</div>
+                  <div className="font-medium text-white text-lg flex items-center gap-2">
+                    <span>{a.college || 'Untitled'}</span>
+                    {/* Round badge removed */}
+                  </div>
 
-                  
-                  {/* REPLACE the old 3-column controls with this 2-row layout */}
-<div className="mt-3 space-y-2">
-  {/* Row 1: Status dropdown + Open */}
-  <div className="flex items-center gap-3">
-    <span className="text-xs subtle">Status</span>
-    <div className="w-44">
-      <MenuSelect
-        value={a.status || 'drafting'}
-        onChange={(val) => updateAppField(a.id, 'status', val)}
-        items={STATUS_ITEMS}
-        className="ms-flat w-full"   // <- non-pill look
-      />
-    </div>
-    <div className="ml-auto">
-      <Link to={`/applications/${a.id}`} className="btn btn-primary">
-        {rowSaving[a.id] ? 'Saving…' : 'Open'}
-      </Link>
-    </div>
-  </div>
+                  {/* Controls: Status + Open, then Due date */}
+                  <div className="mt-3 space-y-2">
+                    <div className="flex items-center gap-3">
+                      <span className="text-xs subtle">Status</span>
+                      <div className="w-44">
+                        <MenuSelect
+                          value={a.status || 'drafting'}
+                          onChange={(val) => updateAppField(a.id, 'status', val)}
+                          items={STATUS_ITEMS}
+                          className="ms-flat w-full"
+                        />
+                      </div>
+                      <div className="ml-auto">
+                        <Link to={`/applications/${a.id}`} className="btn btn-primary">
+                          {rowSaving[a.id] ? 'Saving…' : 'Open'}
+                        </Link>
+                      </div>
+                    </div>
 
-{/* Row 2: Due date (NOWRAP) */}
-<div className="flex items-center gap-1 whitespace">
-  <CalendarSelect
-    value={toInputDate(a.deadline)}                 // 'YYYY-MM-DD' or ''
-    onChange={(dateStr) => updateAppField(a.id, 'deadline', dateStr)}
-    className="!w-45 shrink-1"                      // keeps it compact, matches dropdown style
-  />
-</div>
-
-
-
-</div>
-
+                    <div className="flex items-center gap-1 whitespace">
+                      <CalendarSelect
+                        value={toInputDate(a.deadline)}
+                        onChange={(dateStr) => updateAppField(a.id, 'deadline', dateStr)}
+                        className="!w-45 shrink-1"
+                      />
+                    </div>
+                  </div>
                 </div>
               </article>
             ))}
@@ -288,14 +283,14 @@ export default function ApplicationsPage() {
             <div className="card-body space-y-4">
               <div>
                 <label className="block text-sm mb-1">College *</label>
-                <input
-                  ref={firstInputRef}
-                  type="text"
-                  className="input w-full"
-                  placeholder="e.g., Carnegie Mellon University"
+                <CollegeAutocomplete
+                  inputRef={firstInputRef}
                   value={form.college}
-                  onChange={(e) => setForm((f) => ({ ...f, college: e.target.value }))}
-                  required
+                  onChange={(val) => setForm((f) => ({ ...f, college: val }))}
+                  onSelect={(name /*, plans */) => {
+                    // Just set name; we no longer surface/select rounds here.
+                    setForm((f) => ({ ...f, college: name }));
+                  }}
                 />
               </div>
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
@@ -310,15 +305,12 @@ export default function ApplicationsPage() {
                 </div>
                 <div>
                   <label className="block text-sm mb-1">Status</label>
-                  <select
-                    className="input w-full"
+                  <MenuSelect
                     value={form.status}
-                    onChange={(e) => setForm((f) => ({ ...f, status: e.target.value }))}
-                  >
-                    {STATUSES.map((s) => (
-                      <option key={s} value={s}>{cap(s)}</option>
-                    ))}
-                  </select>
+                    onChange={(val) => setForm((f) => ({ ...f, status: val }))}
+                    items={STATUS_ITEMS}
+                    className="ms-flat w-full"
+                  />
                 </div>
               </div>
               {!!err && <div className="text-sm text-red-400">{err}</div>}
@@ -335,5 +327,59 @@ export default function ApplicationsPage() {
         </div>
       )}
     </AppShell>
+  );
+}
+
+function CollegeAutocomplete({ value, onChange, onSelect, inputRef }){
+  const [q, setQ] = useState(value || '');
+  const [open, setOpen] = useState(false);
+  const [items, setItems] = useState([]);
+  const [loading, setLoading] = useState(false);
+
+  useEffect(() => { setQ(value || ''); }, [value]);
+
+  useEffect(() => {
+    const timer = setTimeout(async () => {
+      const term = q.trim();
+      if (!term) { setItems([]); return; }
+      try {
+        setLoading(true);
+        const { data } = await api.get(`/import/college-suggest?q=${encodeURIComponent(term)}`);
+        console.log('[college-suggest/modal] q=', term, 'resp=', data);
+        setItems(Array.isArray(data?.items) ? data.items : []);
+      } catch { /* ignore */ } finally { setLoading(false); }
+    }, 200);
+    return () => clearTimeout(timer);
+  }, [q]);
+
+  function choose(it){
+    onChange?.(it.name);
+    onSelect?.(it.name, it.plans || {});
+    setOpen(false);
+  }
+
+  return (
+    <div className="ms relative">
+      <input
+        ref={inputRef}
+        className="input w-full"
+        placeholder="e.g., Carnegie Mellon University"
+        value={q}
+        onChange={(e) => { setQ(e.target.value); onChange?.(e.target.value); setOpen(true); }}
+        onFocus={() => setOpen(true)}
+        required
+      />
+      {open && (items.length > 0 || loading) && (
+        <div className="ms-menu absolute z-20 mt-1" style={{ width: '100%' }}>
+          {loading && <div className="ms-item">Searching…</div>}
+          {!loading && items.length === 0 && <div className="ms-item subtle">No matches</div>}
+          {items.map(it => (
+            <button key={it.name} className="ms-item" onMouseDown={(e) => { e.preventDefault(); choose(it); }}>
+              <span className="truncate">{it.name}</span>
+            </button>
+          ))}
+        </div>
+      )}
+    </div>
   );
 }

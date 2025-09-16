@@ -36,7 +36,7 @@ export default function SignIn() {
       localStorage.setItem('token', data.token);
       remember ? localStorage.setItem('rememberEmail', email.trim())
                : localStorage.removeItem('rememberEmail');
-      const me = await api.get('/auth/me');
+      const me = await api.get('/users/me');
       setUser(me.data);
       nav('/dashboard');
     } catch (e) {

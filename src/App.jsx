@@ -1,5 +1,5 @@
 // src/App.jsx
-import { Routes, Route, Navigate } from 'react-router-dom';
+import { Routes, Route, Navigate, useLocation } from 'react-router-dom';
 import { useAuth } from './context/AuthContext';
 
 import Landing from './pages/Landing';
@@ -12,15 +12,24 @@ import ApplicationWorkspace from './pages/ApplicationWorkspace';
 import Extracurriculars from './pages/Extracurriculars';
 import Settings from './pages/Settings';
 import Honors from './pages/Honors';
+import Onboarding from './pages/Onboarding';
+import AdmitLens from './pages/AdmitLens';
 
 // NEW: Essays overview + standalone editor routes
 import EssaysIndex from './pages/EssaysIndex';
 import EssayWorkspace from './pages/EssayWorkspace';
 
 function Protected({ children }) {
-  const { user } = useAuth();
+  const { user, loading } = useAuth();
+  const loc = useLocation();
   const authed = !!user || !!localStorage.getItem('token');
-  return authed ? children : <Navigate to="/signin" replace />;
+  if (!authed && !loading) return <Navigate to="/signin" replace />;
+  if (loading) return null;
+  // Gate everything except /onboarding until onboarded
+  if (user && user.onboarded === false && loc.pathname !== '/onboarding') {
+    return <Navigate to="/onboarding" replace />;
+  }
+  return children;
 }
 function GuestOnly({ children }) {
   const { user } = useAuth();
@@ -41,6 +50,7 @@ export default function App() {
 
       {/* App (protected) */}
       <Route path="/dashboard" element={<Protected><Dashboard /></Protected>} />
+      <Route path="/onboarding" element={<Protected><Onboarding /></Protected>} />
 
       {/* Applications */}
       <Route path="/applications" element={<Protected><Applications /></Protected>} />
@@ -54,8 +64,8 @@ export default function App() {
       {/* Other sections */}
       <Route path="/extracurriculars" element={<Protected><Extracurriculars /></Protected>} />
       <Route path="/honors" element={<Protected><Honors /></Protected>} />
+      <Route path="/admitlens" element={<Protected><AdmitLens /></Protected>} />
       <Route path="/settings" element={<Protected><Settings /></Protected>} />
-
       {/* 404 */}
       <Route path="*" element={<Navigate to="/" replace />} />
     </Routes>

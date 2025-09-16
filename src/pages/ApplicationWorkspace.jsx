@@ -4,7 +4,30 @@ import { useEffect, useState } from 'react';
 import { api } from '../lib/api';
 import { useParams, Link } from 'react-router-dom';
 
-function normStatus(s=''){ return ['drafting','editing','submitted','accepted','rejected'].includes(s) ? s : 'drafting'; }
+import MenuSelect from '../components/ui/MenuSelect';
+import CalendarSelect from '../components/ui/CalendarSelect';
+
+function normStatus(s=''){ return ['drafting','editing','submitted'].includes(s) ? s : 'drafting'; }
+
+// Trimmed to only the three statuses you’re using app-wide
+const STATUS_ITEMS = [
+  { value:'drafting',  label:'Drafting'  },
+  { value:'editing',   label:'Editing'   },
+  { value:'submitted', label:'Submitted' },
+];
+
+const ROUNDS = [
+  { value: 'rd',      label: 'Regular Decision' },
+  { value: 'ed',      label: 'Early Decision' },
+  { value: 'ed2',     label: 'Early Decision II' },
+  { value: 'ea',      label: 'Early Action' },
+  { value: 'rea',     label: 'Restrictive EA' },
+  { value: 'rolling', label: 'Rolling' },
+  { value: 'other',   label: 'Other' },
+];
+
+// Works with ISO or YYYY-MM-DD
+const toInputDateLoose = (v) => (v ? String(v).slice(0,10) : '');
 
 export default function ApplicationWorkspace(){
   const { appId } = useParams();
@@ -58,23 +81,37 @@ export default function ApplicationWorkspace(){
             <h1 className="page-title">{app.college || 'Untitled App'}</h1>
             <div className="subtle text-sm mt-1">{saving ? 'Saving…' : 'Saved'}</div>
           </div>
+
+          {/* Uniform, wider controls */}
           <div className="flex items-center gap-2">
-            <select
-              className="input"
-              value={app.status}
-              onChange={e=>save({ status: normStatus(e.target.value) })}
-            >
-              {['drafting','editing','submitted','accepted','rejected'].map(s=>(
-                <option key={s} value={s}>{s[0].toUpperCase()+s.slice(1)}</option>
-              ))}
-            </select>
-            <input
-              type="date"
-              className="input"
-              defaultValue={app.deadline || ''}
-              onBlur={e=>save({ deadline: e.target.value })}
-              title="Deadline"
-            />
+            {/* Status */}
+            <div className="w-56">
+              <MenuSelect
+                value={normStatus(app.status)}
+                onChange={(val)=>save({ status: normStatus(val) })}
+                items={STATUS_ITEMS}
+                className="ms-flat w-full"
+              />
+            </div>
+
+            {/* Decision Plan */}
+            <div className="w-56">
+              <MenuSelect
+                value={app.round || ''}
+                onChange={(val)=>save({ round: val || null })}
+                items={ROUNDS}
+                className="ms-flat w-full"
+              />
+            </div>
+
+            {/* Deadline */}
+            <div className="w-56">
+              <CalendarSelect
+                value={toInputDateLoose(app.deadline)}
+                onChange={(dateStr)=>save({ deadline: dateStr })}
+                className="w-full"
+              />
+            </div>
           </div>
         </div>
 

@@ -60,6 +60,16 @@ export default function Dashboard() {
   return (
     <AppShell>
       <div className="container space-y-8">
+        {/* ONBOARDING CTA */}
+        {((ov.extracurriculars?.count ?? 0) === 0 || (ov.applications?.total ?? 0) === 0 || (ov.essays?.avgScore ?? 0) === 0) && (
+          <div className="card p-5 flex items-center justify-between">
+            <div>
+              <div className="font-semibold text-white">Finish setting up your account</div>
+              <div className="text-sm text-gray-400">Import activities, honors, apps, and your essay to get personalized suggestions.</div>
+            </div>
+            <Link to="/onboarding" className="btn btn-primary">Start Onboarding</Link>
+          </div>
+        )}
         {/* STATS */}
         <div className="grid gap-6 md:grid-cols-4">
           <Stat title="Essay Score" value={avgScoreText} helper="Latest AI preview" />

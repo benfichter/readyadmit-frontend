@@ -10,6 +10,7 @@ const IN_APP_ROUTES = [
   '/applications',
   '/extracurriculars',
   '/honors',
+  '/admitlens',
   '/settings',
 ];
 
