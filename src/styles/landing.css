@@ -1,0 +1,141 @@
+/* src/styles/landing.css */
+
+/* ---------- Section title with gradient underline (unchanged) ---------- */
+.section-title {
+  position: relative;
+  display: inline-block;
+  padding-bottom: 10px;
+}
+.section-title::after {
+  content: "";
+  position: absolute;
+  left: 0; bottom: 0;
+  height: 3px; width: 100%;
+  background: linear-gradient(90deg, var(--violet), var(--blue) 55%, var(--violet));
+  border-radius: 999px;
+  box-shadow: 0 0 8px rgba(124,58,237,.35), 0 0 10px rgba(37,99,235,.25);
+}
+
+/* subtle focus flash after smooth scroll */
+.scroll-focus {
+  outline: 2px solid rgba(124,58,237,.5);
+  outline-offset: 4px;
+  transition: outline-color .6s ease, outline-offset .6s ease;
+}
+
+/* ---------- Deadline pills (logic-only; stay hidden) + legend ---------- */
+.deadline-pill { display: none; }
+
+.deadline-legend {
+  display: flex; gap: 1rem; flex-wrap: wrap;
+  color: #aab2c9; font-size: .72rem;
+}
+.deadline-legend .dot {
+  display: inline-block; width: .55rem; height: .55rem; border-radius: 999px;
+  margin-right: .35rem; background: #16a34a;
+  box-shadow: 0 0 0 2px rgba(255,255,255,.06) inset;
+}
+.deadline-legend .dot.ok {    background: #16a34a; }
+.deadline-legend .dot.soon {  background: #ea580c; }
+.deadline-legend .dot.urgent{ background: #ef4444; }
+.deadline-legend .dot.past {  background: #94a3b8; }
+
+/* ---------- Reveal animation (unchanged) ---------- */
+.reveal { opacity: 0; transform: translateY(10px); transition: opacity .5s ease, transform .5s ease; }
+.reveal.in { opacity: 1; transform: translateY(0); }
+
+/* ---------- Mini-card accents (NO glow) ---------- */
+/* Base look uses brand violet */
+.mini-card {
+  --accent: var(--violet);
+  border: 1.5px solid var(--accent);
+  border-radius: 12px;
+  background:
+    linear-gradient(0deg, rgba(124,58,237,.10), transparent 60%),
+    rgba(255,255,255,.02);
+  transition: border-color .2s ease, background-color .2s ease, transform .15s ease;
+}
+
+/* Green (14+ days) */
+.mini-card:has(.deadline-pill.ok) {
+  --accent: #16a34a;
+  border-color: var(--accent);
+  background:
+    linear-gradient(0deg, rgba(22,163,74,.10), transparent 60%),
+    rgba(255,255,255,.02);
+}
+
+/* Orange (8–14 days) */
+.mini-card:has(.deadline-pill.soon) {
+  --accent: #ea580c;
+  border-color: var(--accent);
+  background:
+    linear-gradient(0deg, rgba(234,88,12,.10), transparent 60%),
+    rgba(255,255,255,.02);
+}
+
+/* Red (≤7 days) */
+.mini-card:has(.deadline-pill.urgent) {
+  --accent: #ef4444;
+  border-color: var(--accent);
+  background:
+    linear-gradient(0deg, rgba(239,68,68,.10), transparent 60%),
+    rgba(255,255,255,.02);
+}
+
+/* Gray (past) */
+.mini-card:has(.deadline-pill.past) {
+  --accent: #94a3b8;
+  border-color: var(--accent);
+  background:
+    linear-gradient(0deg, rgba(148,163,184,.12), transparent 60%),
+    rgba(255,255,255,.02);
+  opacity: .9;
+}
+
+/* Scholarships: force blue accent (independent of urgency) */
+.mini-card.scholarship {
+  --accent: var(--blue);
+  border-color: var(--accent);
+  background:
+    linear-gradient(0deg, rgba(37,99,235,.12), transparent 60%),
+    rgba(255,255,255,.02);
+}
+
+/* Legend dot: yellow instead of orange */
+.deadline-legend .dot.soon { background: #eab308; } /* yellow-500 */
+
+/* Mini-card accent for 8–14 days: yellow */
+.mini-card:has(.deadline-pill.soon) {
+  --accent: #eab308; /* yellow-500 */
+  border-color: var(--accent);
+  background:
+    linear-gradient(0deg, rgba(234,179,8,.10), transparent 60%),
+    rgba(255,255,255,.02);
+}
+
+/* Lower border weight on mini-cards */
+.mini-card {
+  --accent: var(--violet);
+  border: 1px solid var(--accent); /* was 1.5px */
+  border-radius: 12px;
+  background:
+    linear-gradient(0deg, rgba(124,58,237,.10), transparent 60%),
+    rgba(255,255,255,.02);
+  transition: border-color .2s ease, background-color .2s ease, transform .15s ease;
+}
+
+/* Unified steps: tighter cards & numbered badge */
+.step-card { padding: 1rem; } /* compact */
+.step-num{
+  display:inline-flex; align-items:center; justify-content:center;
+  width:28px; height:28px; border-radius:9999px;
+  background: var(--brand); color:#fff; font-weight:700; font-size:.85rem;
+  flex: 0 0 28px;
+}
+@media (min-width: 640px){
+  .step-num{ width:32px; height:32px; font-size:.9rem; flex-basis:32px; }
+}
+
+/* Slightly tighter overall spacing for this section */
+.steps-grid { margin-top: 1.25rem; } /* already set via mt-6 in JSX; keep consistent */

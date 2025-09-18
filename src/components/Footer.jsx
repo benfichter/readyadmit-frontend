@@ -1,4 +1,4 @@
-// src/components/Footer.jsx
+﻿// src/components/Footer.jsx
 export default function Footer() {
   return (
     <footer className="bg-gray-900 text-gray-300">
@@ -22,11 +22,13 @@ export default function Footer() {
           <ul className="mt-2 space-y-1 text-sm">
             <li><a href="/about" className="hover:text-white">About</a></li>
             <li><a href="/contact" className="hover:text-white">Contact</a></li>
+            <li><a href="/terms" className="hover:text-white">Terms of Service</a></li>
+            <li><a href="/privacy" className="hover:text-white">Privacy Policy</a></li>
           </ul>
         </div>
       </div>
       <div className="border-t border-gray-700 py-4 text-center text-xs text-gray-500">
-        © {new Date().getFullYear()} ReadyAdmit. All rights reserved.
+        (c) {new Date().getFullYear()} ReadyAdmit. All rights reserved.
       </div>
     </footer>
   )

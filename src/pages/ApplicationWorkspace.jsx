@@ -141,11 +141,25 @@ export default function ApplicationWorkspace(){
               <input className="input" placeholder="Title (e.g., Community Essay)" value={newSup.title} onChange={e=>setNewSup({...newSup, title:e.target.value})}/>
               <textarea className="input" style={{minHeight:120}} placeholder="Prompt…" value={newSup.prompt} onChange={e=>setNewSup({...newSup, prompt:e.target.value})}/>
               <div className="grid grid-cols-2 gap-3">
-                <input className="input" placeholder="Word limit" value={newSup.wordLimit} onChange={e=>setNewSup({...newSup, wordLimit:e.target.value})}/>
-                <select className="input" value={newSup.status} onChange={e=>setNewSup({...newSup, status:e.target.value})}>
-                  {['drafting','editing','final'].map(s=><option key={s} value={s}>{s}</option>)}
-                </select>
-              </div>
+  <input
+    className="input"
+    placeholder="Word limit"
+    value={newSup.wordLimit}
+    onChange={e=>setNewSup({...newSup, wordLimit:e.target.value})}
+  />
+  <div>
+    <MenuSelect
+      value={newSup.status}
+      onChange={(val)=>setNewSup({...newSup, status: val})}
+      items={[
+        { value:'drafting', label:'Drafting' },
+        { value:'editing',  label:'Editing'  },
+        { value:'final',    label:'Final'    },
+      ]}
+      className="ms-flat w-full"
+    />
+  </div>
+</div>
             </div>
           </div>
 

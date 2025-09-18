@@ -9,10 +9,11 @@ export default function SignIn() {
   const { setUser } = useAuth();
 
   const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
   const [remember, setRemember] = useState(true);
   const [busy, setBusy] = useState(false);
   const [err, setErr] = useState('');
-  const [fieldErr, setFieldErr] = useState({ email: '' });
+  const [fieldErr, setFieldErr] = useState({ email: '', password: '' });
 
   useEffect(() => {
     const saved = localStorage.getItem('rememberEmail');
@@ -20,10 +21,15 @@ export default function SignIn() {
   }, []);
 
   function validate() {
-    const ok = /\S+@\S+\.\S+/.test(email.trim());
-    const fe = { email: ok ? '' : 'Enter a valid email address.' };
+    const normalizedEmail = email.trim();
+    const emailOk = /\S+@\S+\.\S+/.test(normalizedEmail);
+    const passwordOk = password.length >= 8;
+    const fe = {
+      email: emailOk ? '' : 'Enter a valid email address.',
+      password: passwordOk ? '' : 'Use at least 8 characters.',
+    };
     setFieldErr(fe);
-    return ok;
+    return emailOk && passwordOk;
   }
 
   async function submit(e) {
@@ -32,7 +38,8 @@ export default function SignIn() {
     if (!validate()) return;
     try {
       setBusy(true);
-      const { data } = await api.post('/auth/login', { email: email.trim() });
+      const payload = { email: email.trim(), password };
+      const { data } = await api.post('/auth/login', payload);
       localStorage.setItem('token', data.token);
       remember ? localStorage.setItem('rememberEmail', email.trim())
                : localStorage.removeItem('rememberEmail');
@@ -82,11 +89,33 @@ export default function SignIn() {
                   value={email}
                   onChange={(e)=>setEmail(e.target.value)}
                   placeholder="you@example.com"
+                  autoComplete="email"
                   aria-invalid={!!fieldErr.email}
                   aria-describedby={fieldErr.email ? 'email-err' : undefined}
                 />
               </div>
               {fieldErr.email && <p id="email-err" className="form-error">{fieldErr.email}</p>}
+            </div>
+
+            <div>
+              <label htmlFor="password" className="form-label">Password</label>
+              <div className="input-group">
+                <span className="input-icon" aria-hidden="true">
+                  <svg width="18" height="18" viewBox="0 0 24 24"><path fill="currentColor" d="M17 8V7a5 5 0 0 0-10 0v1a2 2 0 0 0-2 2v9a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2v-9a2 2 0 0 0-2-2Zm-8-1a3 3 0 0 1 6 0v1H9Zm8 12H7v-9h10Z"/></svg>
+                </span>
+                <input
+                  id="password"
+                  type="password"
+                  className={`input input-with-icon ${fieldErr.password ? 'input-invalid' : ''}`}
+                  value={password}
+                  onChange={(e)=>setPassword(e.target.value)}
+                  placeholder="Enter your password"
+                  autoComplete="current-password"
+                  aria-invalid={!!fieldErr.password}
+                  aria-describedby={fieldErr.password ? 'password-err' : undefined}
+                />
+              </div>
+              {fieldErr.password && <p id="password-err" className="form-error">{fieldErr.password}</p>}
             </div>
 
             <div className="flex items-center justify-between">
@@ -95,7 +124,7 @@ export default function SignIn() {
                 Remember me
               </label>
               <button type="submit" className="btn btn-primary min-w-[120px]" disabled={busy}>
-                {busy ? <span className="inline-flex items-center gap-2"><span className="spinner" /> Signing in…</span> : 'Continue'}
+                {busy ? <span className="inline-flex items-center gap-2"><span className="spinner" /> Signing in...</span> : 'Continue'}
               </button>
             </div>
           </form>
@@ -110,10 +139,11 @@ export default function SignIn() {
           </button>
 
           <p className="auth-foot text-xs text-[#9aa3be] mt-6">
-            Don’t have an account? <Link to="/signup" className="form-link">Create one</Link>
+            Don't have an account? <Link to="/signup" className="form-link">Create one</Link>
           </p>
         </section>
       </main>
     </AppShell>
   );
 }
+

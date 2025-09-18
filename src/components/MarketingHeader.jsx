@@ -25,8 +25,8 @@ export default function MarketingHeader() {
           <a href="/#features" className="m-link">Features</a>
           <a href="/#pricing" className="m-link">Pricing</a>
 
-          <Link to="/signin" className="m-signin">Sign In</Link>
-          <Link to="/signup" className="m-cta">Start Free</Link>
+          <Link to="/signup" className="m-signin">Sign Up</Link>
+          <Link to="/signin" className="m-cta">Sign In</Link>
         </nav>
 
         {/* Mobile trigger */}
@@ -51,8 +51,8 @@ export default function MarketingHeader() {
               <a href="/#features" className="m-sheet-link">Features</a>
               <a href="/#pricing" className="m-sheet-link">Pricing</a>
               <div className="pt-2 flex items-center gap-2">
-                <Link to="/signin" className="m-signin flex-1 text-center">Sign In</Link>
-                <Link to="/signup" className="m-cta flex-1 text-center">Start Free</Link>
+                <Link to="/signup" className="m-signin flex-1 text-center">Sign Up</Link>
+                <Link to="/signin" className="m-cta flex-1 text-center">Sign In</Link>
               </div>
             </div>
           </div>

@@ -6,7 +6,7 @@ import { useLocation } from 'react-router-dom';
 const IN_APP_ROUTES = [
   '/dashboard',
   '/essays',
-  '/essaysworkspace',          // new editor base
+  '/essaysworkspace',
   '/applications',
   '/extracurriculars',
   '/honors',
@@ -14,7 +14,7 @@ const IN_APP_ROUTES = [
   '/settings',
 ];
 
-export default function AppShell({ children }) {
+export default function AppShell({ children, showMarketingNav = true }) {
   const { pathname } = useLocation();
   const inApp = IN_APP_ROUTES.some(
     (p) => pathname === p || pathname.startsWith(p + '/')
@@ -24,7 +24,8 @@ export default function AppShell({ children }) {
 
   return (
     <div className="app-root">
-      <Header />
+      {/* NOTE: make Header accept `showMarketingNav` and hide Home/How/Features/Pricing when false */}
+      <Header showMarketingNav={!inApp && showMarketingNav} />
       <div style={{ paddingTop: HEADER_H }}>
         {inApp ? (
           <div className="container app-frame">

@@ -10,19 +10,30 @@ export default function SignUp() {
 
   const [name, setName] = useState('');
   const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
+  const [confirm, setConfirm] = useState('');
   const [agree, setAgree] = useState(false);
   const [busy, setBusy] = useState(false);
   const [err, setErr] = useState('');
-  const [fieldErr, setFieldErr] = useState({ name: '', email: '', agree: '' });
+  const [fieldErr, setFieldErr] = useState({ name: '', email: '', password: '', confirm: '', agree: '' });
 
   function validate() {
+    const trimmedName = name.trim();
+    const trimmedEmail = email.trim();
+    const nameOk = trimmedName.length >= 2;
+    const emailOk = /\S+@\S+\.\S+/.test(trimmedEmail);
+    const passwordOk = password.length >= 8;
+    const confirmOk = password && password === confirm;
+    const agreeOk = !!agree;
     const fe = {
-      name: name.trim().length >= 2 ? '' : 'Enter your full name.',
-      email: /\S+@\S+\.\S+/.test(email.trim()) ? '' : 'Enter a valid email address.',
-      agree: agree ? '' : 'Please agree to the terms.',
+      name: nameOk ? '' : 'Enter your full name.',
+      email: emailOk ? '' : 'Enter a valid email address.',
+      password: passwordOk ? '' : 'Use at least 8 characters.',
+      confirm: confirmOk ? '' : 'Passwords must match.',
+      agree: agreeOk ? '' : 'Please agree to the terms.',
     };
     setFieldErr(fe);
-    return !fe.name && !fe.email && !fe.agree;
+    return nameOk && emailOk && passwordOk && confirmOk && agreeOk;
   }
 
   async function submit(e) {
@@ -31,10 +42,10 @@ export default function SignUp() {
     if (!validate()) return;
     try {
       setBusy(true);
-      // your /auth/login creates the user if not found
-      const { data } = await api.post('/auth/login', { email: email.trim(), name: name.trim() });
+      const payload = { name: name.trim(), email: email.trim(), password };
+      const { data } = await api.post('/auth/register', payload);
       localStorage.setItem('token', data.token);
-    const me = await api.get('/users/me');
+      const me = await api.get('/users/me');
       setUser(me.data);
       nav('/dashboard');
     } catch (e) {
@@ -57,7 +68,7 @@ export default function SignUp() {
           <div>
             <div className="badge mb-3">Create your account</div>
             <h1 className="text-2xl font-bold tracking-tight">Sign up</h1>
-            <p className="text-sm text-[#b8bfd4] mt-1">Start free—email or Google.</p>
+            <p className="text-sm text-[#b8bfd4] mt-1">Start free with email or Google.</p>
           </div>
 
           {err && (
@@ -79,6 +90,7 @@ export default function SignUp() {
                   value={name}
                   onChange={(e)=>setName(e.target.value)}
                   placeholder="Taylor Jenkins"
+                  autoComplete="name"
                   aria-invalid={!!fieldErr.name}
                   aria-describedby={fieldErr.name ? 'name-err' : undefined}
                 />
@@ -99,11 +111,54 @@ export default function SignUp() {
                   value={email}
                   onChange={(e)=>setEmail(e.target.value)}
                   placeholder="you@example.com"
+                  autoComplete="email"
                   aria-invalid={!!fieldErr.email}
                   aria-describedby={fieldErr.email ? 'email-err' : undefined}
                 />
               </div>
               {fieldErr.email && <p id="email-err" className="form-error">{fieldErr.email}</p>}
+            </div>
+
+            <div>
+              <label htmlFor="password" className="form-label">Password</label>
+              <div className="input-group">
+                <span className="input-icon" aria-hidden="true">
+                  <svg width="18" height="18" viewBox="0 0 24 24"><path fill="currentColor" d="M17 8V7a5 5 0 0 0-10 0v1a2 2 0 0 0-2 2v9a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2v-9a2 2 0 0 0-2-2Zm-8-1a3 3 0 0 1 6 0v1H9Zm8 12H7v-9h10Z"/></svg>
+                </span>
+                <input
+                  id="password"
+                  type="password"
+                  className={`input input-with-icon ${fieldErr.password ? 'input-invalid' : ''}`}
+                  value={password}
+                  onChange={(e)=>setPassword(e.target.value)}
+                  placeholder="Create a password"
+                  autoComplete="new-password"
+                  aria-invalid={!!fieldErr.password}
+                  aria-describedby={fieldErr.password ? 'password-err' : undefined}
+                />
+              </div>
+              {fieldErr.password && <p id="password-err" className="form-error">{fieldErr.password}</p>}
+            </div>
+
+            <div>
+              <label htmlFor="confirm" className="form-label">Confirm password</label>
+              <div className="input-group">
+                <span className="input-icon" aria-hidden="true">
+                  <svg width="18" height="18" viewBox="0 0 24 24"><path fill="currentColor" d="M17 8V7a5 5 0 0 0-10 0v1a2 2 0 0 0-2 2v9a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2v-9a2 2 0 0 0-2-2Zm-8-1a3 3 0 0 1 6 0v1H9Zm8 12H7v-9h10Z"/></svg>
+                </span>
+                <input
+                  id="confirm"
+                  type="password"
+                  className={`input input-with-icon ${fieldErr.confirm ? 'input-invalid' : ''}`}
+                  value={confirm}
+                  onChange={(e)=>setConfirm(e.target.value)}
+                  placeholder="Repeat your password"
+                  autoComplete="new-password"
+                  aria-invalid={!!fieldErr.confirm}
+                  aria-describedby={fieldErr.confirm ? 'confirm-err' : undefined}
+                />
+              </div>
+              {fieldErr.confirm && <p id="confirm-err" className="form-error">{fieldErr.confirm}</p>}
             </div>
 
             <div className="flex items-start gap-3">
@@ -120,7 +175,7 @@ export default function SignUp() {
             </div>
 
             <button type="submit" className="btn btn-primary w-full" disabled={busy}>
-              {busy ? <span className="inline-flex items-center gap-2"><span className="spinner" /> Creating…</span> : 'Create account'}
+              {busy ? <span className="inline-flex items-center gap-2"><span className="spinner" /> Creating...</span> : 'Create account'}
             </button>
           </form>
 
@@ -141,3 +196,4 @@ export default function SignUp() {
     </AppShell>
   );
 }
+

@@ -5,6 +5,8 @@ import { useAuth } from './context/AuthContext';
 import Landing from './pages/Landing';
 import SignIn from './pages/SignIn';
 import SignUp from './pages/SignUp';
+import Terms from './pages/Terms';
+import Privacy from './pages/Privacy';
 import OAuthSuccess from './pages/OAuthSuccess';
 import Dashboard from './pages/Dashboard';
 import Applications from './pages/Applications';
@@ -44,6 +46,8 @@ export default function App() {
       <Route path="/" element={<Landing />} />
       <Route path="/signin" element={<GuestOnly><SignIn /></GuestOnly>} />
       <Route path="/signup" element={<GuestOnly><SignUp /></GuestOnly>} />
+      <Route path="/terms" element={<Terms />} />
+      <Route path="/privacy" element={<Privacy />} />
 
       {/* OAuth callback */}
       <Route path="/oauth/success" element={<OAuthSuccess />} />

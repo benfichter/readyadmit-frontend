@@ -15,6 +15,14 @@ const STEPS = [
   { key: 'essays', label: 'Essays' },
 ];
 
+const HONOR_GRADE_ITEMS = [
+  { value: '', label: 'Grade' },
+  { value: '9', label: '9th' },
+  { value: '10', label: '10th' },
+  { value: '11', label: '11th' },
+  { value: '12', label: '12th' },
+];
+
 export default function Onboarding() {
   const [step, setStep] = useState(0);
   const nav = useNavigate();
@@ -237,10 +245,12 @@ function ImportSection({ type, onNext }) {
                 <input className="input" placeholder="Organization" value={r.organization} onChange={(e) => setField(i, 'organization', e.target.value)} />
                 <input className="input" placeholder="Type (e.g., Award)" value={r.kind} onChange={(e) => setField(i, 'kind', e.target.value)} />
                 <input className="input" placeholder="Level (e.g., National)" value={r.level} onChange={(e) => setField(i, 'level', e.target.value)} />
-                <select className="input" value={r.gradeYear} onChange={(e) => setField(i, 'gradeYear', e.target.value)}>
-                  <option value="">Grade</option>
-                  {[9,10,11,12].map(g => <option key={g} value={g}>{g}</option>)}
-                </select>
+                <MenuSelect
+                  value={String(r.gradeYear ?? '')}
+                  onChange={(val) => setField(i, 'gradeYear', val)}
+                  items={HONOR_GRADE_ITEMS}
+                  className="ms-flat w-full"
+                />
               </div>
             )}
 

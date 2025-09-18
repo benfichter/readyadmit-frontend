@@ -1,8 +1,10 @@
-// src/pages/AdmitLens.jsx
+﻿// src/pages/AdmitLens.jsx
 import { useEffect, useMemo, useRef, useState } from 'react';
 import AppShell from '../components/AppShell';
 import { api } from '../lib/api';
-import MenuSelect from '../components/ui/MenuSelect';
+import '../styles/admitlens.css';
+
+
 
 const toItems = (arr=[]) => arr.map(a => ({ value: a.id, label: a.title || a.college || a.name || `Item ${a.id}` }));
 
@@ -130,30 +132,6 @@ export default function AdmitLens(){
       <div className="page-wrap mt-[-8px]">
         {/* fixed width, internal scroll, comfy padding */}
         <div className="card overflow-hidden max-w-[1100px] mx-auto h-[78vh] flex flex-col">
-          {/* Header */}
-          <div className="card-header px-4">
-            <div className="flex flex-wrap items-center gap-3 w-full">
-              <div className="text-lg font-semibold">AdmitLens™</div>
-              <div className="ml-auto flex items-center gap-2 min-w-0">
-                <div className="w-44 sm:w-48 min-w-0">
-                  <MenuSelect
-                    value={selectedApp}
-                    onChange={setSelectedApp}
-                    items={[{value:'',label:'All apps'}, ...appItems.slice(1)]}
-                    className="ms-flat w-full"
-                  />
-                </div>
-                <div className="w-52 sm:w-56 min-w-0">
-                  <MenuSelect
-                    value={selectedEssay}
-                    onChange={setSelectedEssay}
-                    items={[{value:'',label:'All essays'}, ...essayItems.slice(1)]}
-                    className="ms-flat w-full"
-                  />
-                </div>
-              </div>
-            </div>
-          </div>
 
           {/* Body (scrollable message list) */}
           <div className="card-body flex-1 min-h-0 pt-2 px-4 overflow-hidden">
@@ -165,11 +143,11 @@ export default function AdmitLens(){
                 style={{ scrollBehavior: 'smooth', scrollbarGutter: 'stable', overscrollBehavior: 'contain' }}
               >
                 {messages.map((m, i) => (<ChatBubble key={i} role={m.role} content={m.content} />))}
-                {sending && <div className="text-xs subtle">Thinking…</div>}
+                {sending && <ThinkingBubble />}
               </div>
 
               {/* Suggestions ABOVE the composer (small purple bullets) */}
-                <div className="mt-2 mb-3 flex flex-wrap justify-center gap-2">
+                <div className="chat-presets mt-2 mb-3">
                 {presets.map((p, i) => (
                     <button
                     key={i}
@@ -218,6 +196,18 @@ export default function AdmitLens(){
   );
 }
 
+function ThinkingBubble() {
+  return (
+    <div className="flex justify-start">
+      <div className="thinking-bubble" role="status" aria-label="AdmitLens is thinking">
+        <span></span>
+        <span></span>
+        <span></span>
+      </div>
+    </div>
+  );
+}
+
 function ChatBubble({ role, content }){
   const isUser = role === 'user';
   return (
@@ -236,12 +226,36 @@ function ChatBubble({ role, content }){
 }
 
 // light markdown-to-HTML
-function mdToHtml(s=''){
-  return String(s)
-    .replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;')
-    .replace(/\*\*(.+?)\*\*/g,'<strong>$1</strong>')
-    .replace(/\*(.+?)\*/g,'<em>$1</em>')
-    .replace(/`(.+?)`/g,'<code>$1</code>')
-    .replace(/\[(.+?)\]\((https?:\/\/[^\s)]+)\)/g,'<a href="$2" target="_blank" rel="noopener">$1</a>')
-    .replace(/\n/g,'<br/>');
+function mdToHtml(s = '') {
+  // 1) escape HTML
+  const esc = String(s)
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;');
+
+  // 2) protect inline code so other rules don't touch it
+  const codeBins = [];
+  const withTokens = esc.replace(/`([^`]+)`/g, (_, code) => {
+    codeBins.push(code);
+    return `\u0000CODE${codeBins.length - 1}\u0000`;
+  });
+
+  // 3) apply simple markdown rules
+  let html = withTokens
+    .replace(/\*\*([^*]+)\*\*/g, '<strong>$1</strong>')      // **bold**
+    .replace(/\*([^*]+)\*/g, '<em>$1</em>')                  // *italic*
+    .replace(/\[([^\]]+)\]\((https?:\/\/[^\s)]+)\)/g, '<a href="$2" target="_blank" rel="noopener">$1</a>')
+    .replace(/\r?\n/g, '<br/>');                             // newlines → <br/>
+
+  // 4) restore code spans
+  html = html.replace(/\u0000CODE(\d+)\u0000/g, (_, i) => `<code>${codeBins[i]}</code>`);
+
+  return html;
 }
+
+
+
+
+
+
+
