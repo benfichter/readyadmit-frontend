@@ -3,7 +3,9 @@ import AppShell from '../components/AppShell';
 import { useEffect, useMemo, useState } from 'react';
 import { api } from '../lib/api';
 import '../styles/essay-highlights.css';
+import Footer from '../components/Footer';
 import '../styles/landing.css';
+import '../styles/footer.css';
 
 /* ------------------------------------------------------------
    Data
@@ -569,7 +571,9 @@ export default function Landing() {
           </div>
         </section>
       </div>
+      <Footer />
     </AppShell>
   );
 }
+
 
